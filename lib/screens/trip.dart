@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:safetrek_project/screens/start_trip.dart';
 import 'package:safetrek_project/widgets/app_bar.dart';
 import 'package:safetrek_project/widgets/bottom_navigation.dart';
 import 'package:safetrek_project/widgets/emergency_button.dart';
@@ -43,7 +44,12 @@ class _TripState extends State<Trip> {
                   iconBgColor: Colors.pink.shade50,
                   title: "Bắt đầu Chuyến đi Mới",
                   subtitle: "Theo dõi hành trình an toàn",
-                  onTap: () {},
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const StartTrip()),
+                    );
+                  },
                 ),
                 _buildActionCard(
                   icon: Icons.history,
