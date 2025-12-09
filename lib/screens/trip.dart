@@ -8,6 +8,12 @@ class Trip extends StatefulWidget {
 }
 
 class _TripState extends State<Trip> {
+  int _selectedIndex = 0;
+  void _onItemTapped(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
+  }
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -35,7 +41,7 @@ class _TripState extends State<Trip> {
                   color: Colors.white,
                 ),
               ),
-              const SizedBox(width: 8), // Khoảng cách nhỏ giữa Icon và Text
+              const SizedBox(width: 8),
               Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -46,7 +52,7 @@ class _TripState extends State<Trip> {
                       color: Colors.white,
                       fontSize: 18,
                       fontFamily: 'Arimo',
-                      fontWeight: FontWeight.w600, // Tăng độ đậm chút cho đẹp
+                      fontWeight: FontWeight.w600,
                       height: 1.25,
                     ),
                   ),
@@ -105,7 +111,7 @@ class _TripState extends State<Trip> {
                     width: double.infinity,
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFE60000), // Màu đỏ tươi
+                      color: const Color(0xFFE60000),
                       borderRadius: BorderRadius.circular(20),
                       boxShadow: [
                         BoxShadow(
@@ -116,7 +122,7 @@ class _TripState extends State<Trip> {
                       ],
                     ),
                     child: Column(
-                      children: const [
+                      children:  [
                         Icon(Icons.warning_amber_rounded, size: 60, color: Colors.white),
                         SizedBox(height: 10),
                         Text(
@@ -132,9 +138,11 @@ class _TripState extends State<Trip> {
                           "Bấm để gửi cảnh báo ngay lập tức",
                           style: TextStyle(color: Colors.white70, fontSize: 14),
                         ),
+
+
                       ],
-                    ),
-                  ),
+                        ),
+                      ),
                 ),
                 const SizedBox(height: 15),
                 const Text('Nhấn nút này để gửi cảnh báo khẩn cấp ngay lập tức đến tất cả người bảo vệ của bạn',
@@ -142,11 +150,62 @@ class _TripState extends State<Trip> {
                   style: TextStyle(
                       color: Colors.grey,fontSize: 13
                   ),
+                ),
+                const SizedBox(height: 60),
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFEBF5FF),
+                    borderRadius: BorderRadius.circular(15),
+                    border: Border.all(color: Colors.blue.shade100),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: const [
+                          Icon(Icons.lightbulb_outline, color: Colors.orange, size: 20),
+                          SizedBox(width: 8),
+                          Text(
+                            "Hướng dẫn sử dụng",
+                            style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF004085)),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+                      _buildBulletPoint("Bắt đầu chuyến đi mới khi đi ra ngoài"),
+                      _buildBulletPoint("Xem lại lịch sử các chuyến đi"),
+                      _buildBulletPoint("Nhấn nút khẩn cấp khi gặp nguy hiểm"),
+                    ],
+                  ),
                 )
               ],
             )
-        )
+        ),
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _selectedIndex,
+        onTap: _onItemTapped,
+        selectedItemColor: const Color(0xFFE91E63),
+        unselectedItemColor: Colors.grey,
+        items: const [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.shield_outlined),
+            label: "Chuyến đi",
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.people_outline),
+            label: "Người bảo vệ",
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.settings_outlined),
+            label: "Cài đặt",
+          ),
+        ],
+      ),
     );
+
   }
   Widget _buildActionCard({
     required IconData icon,
@@ -176,6 +235,24 @@ class _TripState extends State<Trip> {
         ),
         subtitle: Text(subtitle),
         trailing: const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
+      ),
+    );
+
+  }
+  Widget _buildBulletPoint(String text) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6.0),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text("• ", style: TextStyle(color: Color(0xFF004085), fontWeight: FontWeight.bold)),
+          Expanded(
+            child: Text(
+              text,
+              style: const TextStyle(color: Color(0xFF004085), fontSize: 13),
+            ),
+          ),
+        ],
       ),
     );
   }
