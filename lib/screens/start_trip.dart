@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:safetrek_project/screens/trip_monitoring.dart';
 import 'package:safetrek_project/widgets/app_bar.dart';
 import 'package:safetrek_project/widgets/bottom_navigation.dart';
 
@@ -85,7 +86,14 @@ class _StartTripState extends State<StartTrip> {
                     const SizedBox(height: 32),
                     ElevatedButton(
                       onPressed: () {
-                        // TODO: Implement start monitoring
+                        final duration = int.tryParse(_timeController.text) ?? 15;
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                TripMonitoring(durationInMinutes: duration),
+                          ),
+                        );
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF8A76F3),
@@ -104,7 +112,7 @@ class _StartTripState extends State<StartTrip> {
                       ),
                     ),
                   ],
-                ),
+                ), 
               ),
             ),
           ],
@@ -116,8 +124,6 @@ class _StartTripState extends State<StartTrip> {
       ),
     );
   }
-
-
 
   Widget _buildDestinationCard() {
     return Card(
