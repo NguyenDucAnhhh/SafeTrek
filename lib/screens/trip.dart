@@ -22,85 +22,86 @@ class _TripState extends State<Trip> {
   Widget build(BuildContext context) {
     return Scaffold(
         appBar: const CustomAppBar(),
-        body: Container(
-
-            height: double.infinity,
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment(0.00, 0.30),
-                end: Alignment(1.00, 0.70),
-                colors: [const Color(0xFFEFF6FF), const Color(0xFFE0E7FF)],
+        body: SingleChildScrollView(
+          child: Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment(0.00, 0.30),
+                  end: Alignment(1.00, 0.70),
+                  colors: [const Color(0xFFEFF6FF), const Color(0xFFE0E7FF)],
+                ),
               ),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              mainAxisAlignment: MainAxisAlignment.start,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildActionCard(
-                  icon: Icons.location_on,
-                  iconColor: Colors.pinkAccent,
-                  iconBgColor: Colors.pink.shade50,
-                  title: "Bắt đầu Chuyến đi Mới",
-                  subtitle: "Theo dõi hành trình an toàn",
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => const StartTrip()),
-                    );
-                  },
-                ),
-                _buildActionCard(
-                  icon: Icons.history,
-                  iconColor: Colors.blue,
-                  iconBgColor: Colors.blue.shade50,
-                  title: "Lịch sử Chuyến đi",
-                  subtitle: "0 chuyến đi",
-                  onTap: () {},
-                ),
-                const SizedBox(height: 40),
-                const EmergencyButton(),
-                const SizedBox(height: 15),
-                const Text('Nhấn nút này để gửi cảnh báo khẩn cấp ngay lập tức đến tất cả người bảo vệ của bạn',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                      color: Colors.grey,fontSize: 13
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildActionCard(
+                    icon: Icons.location_on,
+                    iconColor: Colors.pinkAccent,
+                    iconBgColor: Colors.pink.shade50,
+                    title: "Bắt đầu Chuyến đi Mới",
+                    subtitle: "Theo dõi hành trình an toàn",
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const StartTrip()),
+                      );
+                    },
                   ),
-                ),
-                const SizedBox(height: 60),
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFEBF5FF),
-                    borderRadius: BorderRadius.circular(15),
-                    border: Border.all(color: Colors.blue.shade100),
+                  _buildActionCard(
+                    icon: Icons.history,
+                    iconColor: Colors.blue,
+                    iconBgColor: Colors.blue.shade50,
+                    title: "Lịch sử Chuyến đi",
+                    subtitle: "0 chuyến đi",
+                    onTap: () {},
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: const [
-                          Icon(Icons.lightbulb_outline, color: Colors.orange, size: 20),
-                          SizedBox(width: 8),
-                          Text(
-                            "Hướng dẫn sử dụng",
-                            style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFF004085)),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 10),
-                      _buildBulletPoint("Bắt đầu chuyến đi mới khi đi ra ngoài"),
-                      _buildBulletPoint("Xem lại lịch sử các chuyến đi"),
-                      _buildBulletPoint("Nhấn nút khẩn cấp khi gặp nguy hiểm"),
-                    ],
+                  const SizedBox(height: 40),
+                  const EmergencyButton(),
+                  const SizedBox(height: 15),
+                  const Text('Nhấn nút này để gửi cảnh báo khẩn cấp ngay lập tức đến tất cả người bảo vệ của bạn',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                        color: Colors.grey,fontSize: 13
+                    ),
                   ),
-                )
-              ],
-            )
+                  const SizedBox(height: 60),
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFEBF5FF),
+                      borderRadius: BorderRadius.circular(15),
+                      border: Border.all(color: Colors.blue.shade100),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: const [
+                            Icon(Icons.lightbulb_outline, color: Colors.orange, size: 20),
+                            SizedBox(width: 8),
+                            Text(
+                              "Hướng dẫn sử dụng",
+                              style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFF004085)),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 10),
+                        _buildBulletPoint("Bắt đầu chuyến đi mới khi đi ra ngoài"),
+                        _buildBulletPoint("Xem lại lịch sử các chuyến đi"),
+                        _buildBulletPoint("Nhấn nút khẩn cấp khi gặp nguy hiểm"),
+                      ],
+                    ),
+                  )
+                ],
+              )
+          ),
         ),
+
       bottomNavigationBar: BottomNavigation(
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,
