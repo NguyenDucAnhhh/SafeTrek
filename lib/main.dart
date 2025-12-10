@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'screens/trip.dart';
+import 'screens/trip/trip.dart';
+
 void main(){
   runApp(const MyApp());
 }

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:safetrek_project/screens/start_trip.dart';
+import 'package:safetrek_project/screens/trip/start_trip.dart';
 import 'package:safetrek_project/widgets/app_bar.dart';
 import 'package:safetrek_project/widgets/bottom_navigation.dart';
 import 'package:safetrek_project/widgets/emergency_button.dart';
