@@ -138,7 +138,7 @@ class _GuardiansScreenState extends State<GuardiansScreen> {
                     Navigator.of(context).pop();
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue,
+                    backgroundColor: const Color(0xFF1877F2),
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(20),
@@ -194,7 +194,8 @@ class _GuardiansScreenState extends State<GuardiansScreen> {
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
-                            Text('Quản lý người bảo vệ (${_guardians.length}/5)'),
+                            Text('Quản lý người bảo vệ'),
+                            Text('(${_guardians.length}/5)')
                           ],
                         ),
                         ElevatedButton.icon(
@@ -202,7 +203,7 @@ class _GuardiansScreenState extends State<GuardiansScreen> {
                           icon: const Icon(Icons.add),
                           label: const Text('Thêm'),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.blue,
+                            backgroundColor: const Color(0xFF1877F2),
                             foregroundColor: Colors.white,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(20),
@@ -216,10 +217,14 @@ class _GuardiansScreenState extends State<GuardiansScreen> {
                         ? Column(
                             children: [
                               const SizedBox(height: 20),
-                              const Icon(
-                                Icons.people_outline,
-                                size: 60,
-                                color: Colors.blue,
+                              CircleAvatar(
+                                radius: 45,
+                                backgroundColor: const Color(0xFFD6EAF8),
+                                child: const Icon(
+                                  Icons.people_outline,
+                                  size: 50,
+                                  color: Color(0xFF1877F2),
+                                ),
                               ),
                               const SizedBox(height: 20),
                               const Text('Chưa có người bảo vệ nào'),
@@ -229,7 +234,7 @@ class _GuardiansScreenState extends State<GuardiansScreen> {
                                 icon: const Icon(Icons.add),
                                 label: const Text('Thêm Người Bảo vệ'),
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.blue,
+                                  backgroundColor: const Color(0xFF1877F2),
                                   foregroundColor: Colors.white,
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(30),
