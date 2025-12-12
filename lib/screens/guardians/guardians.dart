@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:safetrek_project/screens/guardians/guardiancard.dart';
 import 'package:safetrek_project/widgets/app_bar.dart';
 import 'package:safetrek_project/widgets/bottom_navigation.dart';
 
@@ -7,8 +8,9 @@ class Guardian {
   final String name;
   final String phone;
   final String? email;
+  final bool isAccepted;
 
-  Guardian({required this.name, required this.phone, this.email});
+  Guardian({required this.name, required this.phone, this.email, this.isAccepted = true});
 }
 
 class GuardiansScreen extends StatefulWidget {
@@ -20,7 +22,10 @@ class GuardiansScreen extends StatefulWidget {
 
 class _GuardiansScreenState extends State<GuardiansScreen> {
   int _selectedIndex = 1;
-  final List<Guardian> _guardians = [];
+  final List<Guardian> _guardians = [
+    Guardian(name: 'Nguyễn Đức Anh', phone: '0987654321', email: 'a@gmail.com', isAccepted: true),
+    Guardian(name: 'Trần Thị B', phone: '0123456789', email: 'b@gmail.com', isAccepted: false),
+  ];
 
   void _onItemTapped(int index) {
     setState(() {
@@ -168,7 +173,7 @@ class _GuardiansScreenState extends State<GuardiansScreen> {
     return Scaffold(
       appBar: const CustomAppBar(),
       body: Container(
-        color: const Color(0xFFE3F2FD),
+        color: const Color(0xFFF0F8FF),
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
@@ -194,8 +199,7 @@ class _GuardiansScreenState extends State<GuardiansScreen> {
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
-                            Text('Quản lý người bảo vệ'),
-                            Text('(${_guardians.length}/5)')
+                             Text('Quản lý người bảo vệ (${_guardians.length}/5)'),
                           ],
                         ),
                         ElevatedButton.icon(
@@ -220,10 +224,10 @@ class _GuardiansScreenState extends State<GuardiansScreen> {
                               CircleAvatar(
                                 radius: 45,
                                 backgroundColor: const Color(0xFFD6EAF8),
-                                child: const Icon(
-                                  Icons.people_outline,
+                                child: Icon(
+                                  Icons.groups_outlined,
                                   size: 50,
-                                  color: Color(0xFF1877F2),
+                                  color: const Color(0xFF1877F2),
                                 ),
                               ),
                               const SizedBox(height: 20),
@@ -296,90 +300,6 @@ class _GuardiansScreenState extends State<GuardiansScreen> {
       bottomNavigationBar: BottomNavigation(
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,
-      ),
-    );
-  }
-}
-
-class GuardianCard extends StatelessWidget {
-  final Guardian guardian;
-  final VoidCallback onRemove;
-
-  const GuardianCard({
-    super.key,
-    required this.guardian,
-    required this.onRemove,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 8.0),
-      padding: const EdgeInsets.all(12.0),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(10.0),
-        border: Border.all(color: Colors.grey.shade300),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
-                children: [
-                  Text(
-                    guardian.name,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: Colors.orange,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Text(
-                      'Chờ',
-                      style: TextStyle(color: Colors.white, fontSize: 12),
-                    ),
-                  ),
-                ],
-              ),
-              IconButton(
-                icon: const Icon(Icons.delete_outline, color: Colors.grey),
-                onPressed: onRemove,
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              const Icon(Icons.phone, size: 16, color: Colors.grey),
-              const SizedBox(width: 8),
-              Text(guardian.phone),
-            ],
-          ),
-          if (guardian.email != null) ...[
-            const SizedBox(height: 4),
-            Row(
-              children: [
-                const Icon(Icons.email, size: 16, color: Colors.grey),
-                const SizedBox(width: 8),
-                Text(guardian.email!),
-              ],
-            ),
-          ],
-          const SizedBox(height: 8),
-          const Text(
-            'Đang chờ chấp nhận',
-            style: TextStyle(color: Colors.red, fontStyle: FontStyle.italic),
-          ),
-        ],
       ),
     );
   }
