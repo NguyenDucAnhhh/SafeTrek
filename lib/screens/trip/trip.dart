@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:safetrek_project/screens/trip/start_trip.dart';
+import 'package:safetrek_project/widgets/action_card.dart';
 import 'package:safetrek_project/widgets/app_bar.dart';
 import 'package:safetrek_project/widgets/bottom_navigation.dart';
 import 'package:safetrek_project/widgets/emergency_button.dart';
@@ -28,8 +29,8 @@ class _TripState extends State<Trip> {
         height: double.infinity,
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            begin: Alignment(0.00, 0.30),
-            end: Alignment(1.00, 0.70),
+            begin: const Alignment(0.00, 0.30),
+            end: const Alignment(1.00, 0.70),
             colors: [const Color(0xFFEFF6FF), const Color(0xFFE0E7FF)],
           ),
         ),
@@ -39,7 +40,7 @@ class _TripState extends State<Trip> {
             mainAxisAlignment: MainAxisAlignment.start,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              _buildActionCard(
+              ActionCard(
                 icon: Icons.location_on,
                 iconColor: Colors.pinkAccent,
                 iconBgColor: Colors.pink.shade50,
@@ -52,7 +53,7 @@ class _TripState extends State<Trip> {
                   );
                 },
               ),
-              _buildActionCard(
+              ActionCard(
                 icon: Icons.history,
                 iconColor: Colors.blue,
                 iconBgColor: Colors.blue.shade50,
@@ -106,38 +107,6 @@ class _TripState extends State<Trip> {
       bottomNavigationBar: BottomNavigation(
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,
-      ),
-    );
-  }
-
-  Widget _buildActionCard({
-    required IconData icon,
-    required Color iconColor,
-    required Color iconBgColor,
-    required String title,
-    required String subtitle,
-    required VoidCallback onTap,
-  }) {
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-      child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        onTap: onTap,
-        leading: Container(
-          padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(
-            color: iconBgColor,
-            shape: BoxShape.circle,
-          ),
-          child: Icon(icon, color: iconColor),
-        ),
-        title: Text(
-          title,
-          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-        ),
-        subtitle: Text(subtitle),
-        trailing: const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
       ),
     );
   }

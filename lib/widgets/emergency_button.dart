@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:safetrek_project/widgets/emergency_dialog.dart';
 
 class EmergencyButton extends StatelessWidget {
   const EmergencyButton({super.key});
@@ -6,7 +7,14 @@ class EmergencyButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return InkWell(
-      onTap: () {},
+      onTap: () {
+        showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return const EmergencyDialog();
+          },
+        );
+      },
       borderRadius: BorderRadius.circular(20),
       child: Container(
         width: double.infinity,

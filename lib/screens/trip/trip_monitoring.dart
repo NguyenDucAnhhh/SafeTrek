@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:safetrek_project/widgets/app_bar.dart';
 import 'package:safetrek_project/widgets/bottom_navigation.dart';
 import 'package:safetrek_project/widgets/emergency_button.dart';
+import 'package:safetrek_project/widgets/pin_input_dialog.dart';
 
 class TripMonitoring extends StatefulWidget {
   final int durationInMinutes;
@@ -57,6 +58,21 @@ class _TripMonitoringState extends State<TripMonitoring> {
     String twoDigitMinutes = twoDigits(duration.inMinutes.remainder(60));
     String twoDigitSeconds = twoDigits(duration.inSeconds.remainder(60));
     return "$twoDigitMinutes:$twoDigitSeconds";
+  }
+
+  void _showPinDialog() async {
+    final result = await showDialog(
+      context: context,
+      barrierDismissible: false, // User must enter PIN
+      builder: (BuildContext context) {
+        return const PinInputDialog();
+      },
+    );
+
+    if (result == true && mounted) {
+      _timer.cancel();
+      Navigator.pop(context); // Go back to the previous screen
+    }
   }
 
   @override
@@ -143,10 +159,7 @@ class _TripMonitoringState extends State<TripMonitoring> {
             ),
             const SizedBox(height: 24),
             ElevatedButton(
-              onPressed: () {
-                _timer.cancel();
-                Navigator.pop(context); 
-              },
+              onPressed: _showPinDialog, // Show PIN dialog on press
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF007BFF),
                 minimumSize: const Size(double.infinity, 50),
