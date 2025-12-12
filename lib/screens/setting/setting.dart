@@ -67,7 +67,12 @@ class _SettingState extends State<Setting> {
                 iconBgColor: const Color(0xFFDCFCE7),
                 title: 'Mã PIN An toàn',
                 subtitle: _hasSafePin ? 'Đã cài đặt' : 'Chưa cài đặt',
-                onTap: (){},
+                onTap: (){
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const SettingSafePIN()),
+                  );
+                },
               ),
 
               ActionCard(
