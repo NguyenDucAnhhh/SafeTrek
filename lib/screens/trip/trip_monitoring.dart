@@ -66,7 +66,6 @@ class _TripMonitoringState extends State<TripMonitoring> {
       body: Container(
         height: double.infinity,
         width: double.infinity,
-        padding: const EdgeInsets.all(16.0),
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
@@ -74,18 +73,21 @@ class _TripMonitoringState extends State<TripMonitoring> {
             colors: [Color(0xFFF1F4FF), Color(0xFFE2E9FF)],
           ),
         ),
-        child: Column(
-          children: [
-            _buildTimerCard(),
-            const SizedBox(height: 40),
-            const EmergencyButton(),
-            const SizedBox(height: 15),
-            const Text(
-              'Nhấn nút này để gửi cảnh báo khẩn cấp ngay lập tức đến tất cả người bảo vệ của bạn',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.grey, fontSize: 13),
-            ),
-          ],
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            children: [
+              _buildTimerCard(),
+              const SizedBox(height: 40),
+              const EmergencyButton(),
+              const SizedBox(height: 15),
+              const Text(
+                'Nhấn nút này để gửi cảnh báo khẩn cấp ngay lập tức đến tất cả người bảo vệ của bạn',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: Colors.grey, fontSize: 13),
+              ),
+            ],
+          ),
         ),
       ),
       bottomNavigationBar: BottomNavigation(
