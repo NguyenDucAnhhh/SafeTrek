@@ -23,6 +23,7 @@ class ActionCard extends StatelessWidget {
     return Card(
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+      color: Colors.white,
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         onTap: onTap,
@@ -30,7 +31,8 @@ class ActionCard extends StatelessWidget {
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
             color: iconBgColor,
-            shape: BoxShape.circle,
+            shape: BoxShape.rectangle,
+            borderRadius: BorderRadius.circular(10)
           ),
           child: Icon(icon, color: iconColor),
         ),
