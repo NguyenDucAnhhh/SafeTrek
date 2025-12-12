@@ -81,7 +81,12 @@ class _SettingState extends State<Setting> {
                 iconBgColor: const Color(0xFFFFE2E2),
                 title: 'Mã PIN Bị ép buộc',
                 subtitle: _hasDuressPin ? 'Đã cài đặt' : 'Chưa cài đặt',
-                onTap: (){},
+                onTap: (){
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const SettingDuressPIN()),
+                  );
+                },
               ),
 
               ActionCard(
