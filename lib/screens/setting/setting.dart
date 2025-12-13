@@ -21,10 +21,30 @@ class _SettingState extends State<Setting> {
   bool _isStealthPanicOn = false;
 
   int _selectedIndex = 2;
+
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
     });
+  }
+
+  void _showSuccessSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(Icons.check, color: Colors.white),
+            const SizedBox(width: 10),
+            Expanded(child: Text(message)),
+          ],
+        ),
+        backgroundColor: const Color(0xFF10B981),
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.fromLTRB(15, 5, 15, 20),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        duration: const Duration(seconds: 3),
+      ),
+    );
   }
 
   @override
@@ -60,49 +80,57 @@ class _SettingState extends State<Setting> {
                   );
                 },
               ),
-
               ActionCard(
                 icon: Icons.shield_outlined,
                 iconColor: const Color(0xFF0B7A4A),
                 iconBgColor: const Color(0xFFDCFCE7),
                 title: 'Mã PIN An toàn',
                 subtitle: _hasSafePin ? 'Đã cài đặt' : 'Chưa cài đặt',
-                onTap: (){
-                  Navigator.push(
+                onTap: () async {
+                  final result = await Navigator.push(
                     context,
                     MaterialPageRoute(builder: (context) => const SettingSafePIN()),
                   );
+                  if (result == true) {
+                    setState(() {
+                      _hasSafePin = true;
+                    });
+                    _showSuccessSnackBar('Mã PIN an toàn đã được cập nhật!');
+                  }
                 },
               ),
-
               ActionCard(
                 icon: Icons.report_problem_outlined,
                 iconColor: const Color(0xFFB91C1C),
                 iconBgColor: const Color(0xFFFFE2E2),
                 title: 'Mã PIN Bị ép buộc',
                 subtitle: _hasDuressPin ? 'Đã cài đặt' : 'Chưa cài đặt',
-                onTap: (){
-                  Navigator.push(
+                onTap: () async {
+                  final result = await Navigator.push(
                     context,
                     MaterialPageRoute(builder: (context) => const SettingDuressPIN()),
                   );
+                  if (result == true) {
+                    setState(() {
+                      _hasDuressPin = true;
+                    });
+                    _showSuccessSnackBar('Mã PIN ép buộc đã được cập nhật!');
+                  }
                 },
               ),
-
               ActionCard(
                 icon: Icons.flash_on_outlined,
                 iconColor: const Color(0xFFB91C1C),
                 iconBgColor: const Color(0xFFFFE2E2),
                 title: 'Nút Hoảng loạn Ẩn',
                 subtitle: _isStealthPanicOn ? 'Đang bật' : 'Chưa bật',
-                onTap: (){
+                onTap: () {
                   Navigator.push(
                     context,
                     MaterialPageRoute(builder: (context) => const SettingHiddenPanic()),
                   );
                 },
               ),
-
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
@@ -115,14 +143,11 @@ class _SettingState extends State<Setting> {
                   children: [
                     Row(
                       children: const [
-                        Icon(Icons.lightbulb_outline,
-                            color: Colors.orange, size: 20),
+                        Icon(Icons.lightbulb_outline, color: Colors.orange, size: 20),
                         SizedBox(width: 8),
                         Text(
                           "Lời khuyên bảo mật",
-                          style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFF004085)),
+                          style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF004085)),
                         ),
                       ],
                     ),
@@ -151,8 +176,7 @@ class _SettingState extends State<Setting> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text("• ",
-              style: TextStyle(color: Color(0xFF004085), fontWeight: FontWeight.bold)),
+          const Text("• ", style: TextStyle(color: Color(0xFF004085), fontWeight: FontWeight.bold)),
           Expanded(
             child: Text(
               text,

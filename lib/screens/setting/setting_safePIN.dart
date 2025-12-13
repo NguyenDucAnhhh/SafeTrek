@@ -10,15 +10,14 @@ class SettingSafePIN extends StatefulWidget {
 }
 
 class _SettingSafePINState extends State<SettingSafePIN> {
-
   int _selectedIndex = 2;
+
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
     });
   }
 
-  @override
   InputDecoration _inputStyle() {
     return InputDecoration(
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -91,7 +90,6 @@ class _SettingSafePINState extends State<SettingSafePIN> {
                         ),
                       ),
                       const SizedBox(height: 14),
-
                       Row(
                         children: [
                           Container(
@@ -125,9 +123,7 @@ class _SettingSafePINState extends State<SettingSafePIN> {
                           ),
                         ],
                       ),
-
                       const SizedBox(height: 22),
-
                       const Text(
                         "Tạo mã PIN mới (4 chữ số)",
                         style: TextStyle(
@@ -135,23 +131,25 @@ class _SettingSafePINState extends State<SettingSafePIN> {
                           color: Color(0xFF4B5563),
                         ),
                       ),
-
                       const SizedBox(height: 8),
-
                       TextField(
                         keyboardType: TextInputType.number,
                         maxLength: 4,
                         textAlign: TextAlign.center,
                         decoration: _inputStyle().copyWith(counterText: ""),
-                        style: const TextStyle(letterSpacing: 4, fontSize: 20, fontWeight: FontWeight.w600,),
+                        style: const TextStyle(
+                          letterSpacing: 4,
+                          fontSize: 20,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
-
                       const SizedBox(height: 14),
-
                       SizedBox(
                         width: double.infinity,
                         child: ElevatedButton(
-                          onPressed: (){},
+                          onPressed: () {
+                            Navigator.pop(context, true);
+                          },
                           style: ElevatedButton.styleFrom(
                             padding: const EdgeInsets.symmetric(vertical: 14),
                             shape: RoundedRectangleBorder(
@@ -170,9 +168,7 @@ class _SettingSafePINState extends State<SettingSafePIN> {
                           ),
                         ),
                       ),
-
                       const SizedBox(height: 16),
-
                       Container(
                         width: double.infinity,
                         padding: const EdgeInsets.all(10),
