@@ -95,7 +95,12 @@ class _SettingState extends State<Setting> {
                 iconBgColor: const Color(0xFFFFE2E2),
                 title: 'Nút Hoảng loạn Ẩn',
                 subtitle: _isStealthPanicOn ? 'Đang bật' : 'Chưa bật',
-                onTap: (){},
+                onTap: (){
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const SettingHiddenPanic()),
+                  );
+                },
               ),
 
               Container(
