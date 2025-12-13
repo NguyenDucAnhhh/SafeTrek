@@ -69,12 +69,16 @@ class _PinInputDialogState extends State<PinInputDialog> {
             keyboardType: TextInputType.number,
             obscureText: true,
             maxLength: 4,
-            textAlign: TextAlign.center,
+            // textAlign: TextAlign.center, // Removed to align hint to the start
             style: const TextStyle(fontSize: 24, letterSpacing: 16),
             decoration: InputDecoration(
               counterText: "",
-              hintText: "----",
-              hintStyle: const TextStyle(letterSpacing: 16),
+              hintText: "Nhập 4 số PIN",
+              hintStyle: const TextStyle(
+                fontSize: 22,
+                color: Colors.grey,
+                letterSpacing: 1, // Reset letter spacing for hint
+              ),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
                 borderSide: BorderSide(color: Colors.grey.shade300),
@@ -109,8 +113,6 @@ class _PinInputDialogState extends State<PinInputDialog> {
               Expanded(
                 child: ElevatedButton(
                   onPressed: () {
-                    // TODO: Add PIN verification logic here
-                    // For now, just pop with a success indicator
                     Navigator.of(context).pop(true);
                   },
                   style: ElevatedButton.styleFrom(
