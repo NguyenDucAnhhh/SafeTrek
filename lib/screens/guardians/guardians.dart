@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:safetrek_project/screens/guardians/guardiancard.dart';
 import 'package:safetrek_project/widgets/app_bar.dart';
 import 'package:safetrek_project/widgets/bottom_navigation.dart';
+import 'package:safetrek_project/widgets/show_success_snack_bar.dart';
 
 // Data model for a Guardian
 class Guardian {
@@ -41,7 +42,7 @@ class _GuardiansScreenState extends State<GuardiansScreen> {
 
     showDialog(
       context: context,
-      builder: (BuildContext context) {
+      builder: (BuildContext dialogContext) {
         return AlertDialog(
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20.0),
@@ -117,7 +118,7 @@ class _GuardiansScreenState extends State<GuardiansScreen> {
               children: [
                 ElevatedButton(
                   onPressed: () {
-                    Navigator.of(context).pop();
+                    Navigator.of(dialogContext).pop();
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.grey[200],
@@ -131,6 +132,8 @@ class _GuardiansScreenState extends State<GuardiansScreen> {
                 ),
                 ElevatedButton(
                   onPressed: () {
+                    Navigator.of(dialogContext).pop();
+
                     if (nameController.text.isNotEmpty && phoneController.text.isNotEmpty) {
                       setState(() {
                         _guardians.add(Guardian(
@@ -139,8 +142,9 @@ class _GuardiansScreenState extends State<GuardiansScreen> {
                           email: emailController.text.isNotEmpty ? emailController.text : null,
                         ));
                       });
+
+                      showSuccessSnackBar(context, 'Thêm người bảo vệ thành công !');
                     }
-                    Navigator.of(context).pop();
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF1877F2),
@@ -257,10 +261,10 @@ class _GuardiansScreenState extends State<GuardiansScreen> {
                             ),
                           ),
                           const SizedBox(height: 20),
-                        ],
-                      )
+                        ],                      )
                           : ListView.builder(
                         shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
                         itemCount: _guardians.length,
                         itemBuilder: (context, index) {
                           return GuardianCard(
@@ -280,8 +284,7 @@ class _GuardiansScreenState extends State<GuardiansScreen> {
                 ),
                 elevation: 4,
                 child: const Padding(
-                  padding: EdgeInsets.all(16.0),
-                  child: Column(
+                  padding: EdgeInsets.all(16.0),                  child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Row(
