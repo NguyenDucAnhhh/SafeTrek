@@ -125,7 +125,7 @@ class _SettingSafePINState extends State<SettingSafePIN> {
                       ),
                       const SizedBox(height: 22),
                       const Text(
-                        "Tạo mã PIN mới (4 chữ số)",
+                        "Nhập mã PIN cũ (4 chữ số)",
                         style: TextStyle(
                           fontSize: 13,
                           color: Color(0xFF4B5563),
@@ -144,6 +144,49 @@ class _SettingSafePINState extends State<SettingSafePIN> {
                         ),
                       ),
                       const SizedBox(height: 14),
+
+                      const Text(
+                        "Nhập mã PIN mới (4 chữ số)",
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Color(0xFF4B5563),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      TextField(
+                        keyboardType: TextInputType.number,
+                        maxLength: 4,
+                        textAlign: TextAlign.center,
+                        decoration: _inputStyle().copyWith(counterText: ""),
+                        style: const TextStyle(
+                          letterSpacing: 4,
+                          fontSize: 20,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+
+                      const Text(
+                        "Nhập lại mã PIN cũ (4 chữ số)",
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Color(0xFF4B5563),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      TextField(
+                        keyboardType: TextInputType.number,
+                        maxLength: 4,
+                        textAlign: TextAlign.center,
+                        decoration: _inputStyle().copyWith(counterText: ""),
+                        style: const TextStyle(
+                          letterSpacing: 4,
+                          fontSize: 20,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+
                       SizedBox(
                         width: double.infinity,
                         child: ElevatedButton(
