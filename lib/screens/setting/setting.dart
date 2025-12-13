@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:safetrek_project/widgets/app_bar.dart';
 import 'package:safetrek_project/widgets/bottom_navigation.dart';
 import 'package:safetrek_project/widgets/action_card.dart';
+import 'package:safetrek_project/widgets/show_success_snack_bar.dart';
 import 'package:safetrek_project/screens/setting/setting_profile.dart';
 import 'package:safetrek_project/screens/setting/setting_safePIN.dart';
 import 'package:safetrek_project/screens/setting/setting_duressPIN.dart';
@@ -26,25 +27,6 @@ class _SettingState extends State<Setting> {
     setState(() {
       _selectedIndex = index;
     });
-  }
-
-  void _showSuccessSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            const Icon(Icons.check, color: Colors.white),
-            const SizedBox(width: 10),
-            Expanded(child: Text(message)),
-          ],
-        ),
-        backgroundColor: const Color(0xFF10B981),
-        behavior: SnackBarBehavior.floating,
-        margin: const EdgeInsets.fromLTRB(15, 5, 15, 20),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        duration: const Duration(seconds: 3),
-      ),
-    );
   }
 
   @override
@@ -95,7 +77,7 @@ class _SettingState extends State<Setting> {
                     setState(() {
                       _hasSafePin = true;
                     });
-                    _showSuccessSnackBar('Mã PIN an toàn đã được cập nhật!');
+                    showSuccessSnackBar(context, 'Mã PIN an toàn đã được cập nhật!');
                   }
                 },
               ),
@@ -114,7 +96,7 @@ class _SettingState extends State<Setting> {
                     setState(() {
                       _hasDuressPin = true;
                     });
-                    _showSuccessSnackBar('Mã PIN ép buộc đã được cập nhật!');
+                    showSuccessSnackBar(context, 'Mã PIN ép buộc đã được cập nhật!');
                   }
                 },
               ),
