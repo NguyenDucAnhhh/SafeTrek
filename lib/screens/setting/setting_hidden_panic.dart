@@ -20,7 +20,7 @@ class _SettingHiddenPanicState extends State<SettingHiddenPanic> {
   }
 
   // --- STATE ---
-  bool _isEnabled = true;
+  bool _isEnabled = false;
   ActivationMethod _selectedMethod = ActivationMethod.volume;
   int _selectedCount = 5;
 
@@ -97,33 +97,25 @@ class _SettingHiddenPanicState extends State<SettingHiddenPanic> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // --- Back button ---
           GestureDetector(
-            onTap: () => Navigator.pop(context),
+            onTap: () => Navigator.maybePop(context),
             child: Row(
-              mainAxisSize: MainAxisSize.min,
               children: const [
-                Icon(
-                  Icons.arrow_back_ios_new,
-                  size: 16,
-                  color: Color(0xFFF472B6),
-                ),
-                SizedBox(width: 4),
+                Icon(Icons.arrow_back_ios_new,
+                    size: 18, color: Color(0xFFF472B6)),
+                SizedBox(width: 6),
                 Text(
-                  'Quay lại',
+                  "Quay lại",
                   style: TextStyle(
                     color: Color(0xFFF472B6),
-                    fontSize: 14,
                     fontWeight: FontWeight.w500,
                   ),
-                ),
+                )
               ],
             ),
           ),
+          const SizedBox(height: 14),
 
-          const SizedBox(height: 12),
-
-          // --- Main header content ---
           Row(
             children: [
               Container(

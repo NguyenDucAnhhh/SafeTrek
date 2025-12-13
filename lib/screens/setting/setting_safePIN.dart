@@ -55,27 +55,6 @@ class _SettingSafePINState extends State<SettingSafePIN> {
           child: ListView(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
             children: [
-              // Back row
-              GestureDetector(
-                onTap: () => Navigator.maybePop(context),
-                child: Row(
-                  children: const [
-                    Icon(Icons.arrow_back_ios_new,
-                        size: 18, color: Color(0xFFF472B6)),
-                    SizedBox(width: 6),
-                    Text(
-                      "Quay lại",
-                      style: TextStyle(
-                        color: Color(0xFFF472B6),
-                        fontWeight: FontWeight.w500,
-                      ),
-                    )
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: 14),
-
               Center(
                 child: Container(
                   padding: const EdgeInsets.all(20),
@@ -94,6 +73,25 @@ class _SettingSafePINState extends State<SettingSafePIN> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      GestureDetector(
+                        onTap: () => Navigator.maybePop(context),
+                        child: Row(
+                          children: const [
+                            Icon(Icons.arrow_back_ios_new,
+                                size: 18, color: Color(0xFFF472B6)),
+                            SizedBox(width: 6),
+                            Text(
+                              "Quay lại",
+                              style: TextStyle(
+                                color: Color(0xFFF472B6),
+                                fontWeight: FontWeight.w500,
+                              ),
+                            )
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+
                       Row(
                         children: [
                           Container(

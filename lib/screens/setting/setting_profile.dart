@@ -13,13 +13,11 @@ class _SettingProfileState extends State<SettingProfile> {
   final _formKey = GlobalKey<FormState>();
 
   int _selectedIndex = 2;
-
-  @override
-
   void _onItemTapped(int index) {
     setState(() => _selectedIndex = index);
   }
 
+  @override
   InputDecoration _inputDecoration({required String hint, IconData? prefixIcon}) {
     return InputDecoration(
       hintText: hint,
@@ -54,25 +52,6 @@ class _SettingProfileState extends State<SettingProfile> {
           child: ListView(
             padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
             children: [
-              Row(
-                children: [
-                  GestureDetector(
-                    onTap: () => Navigator.maybePop(context),
-                    child: Row(
-                      children: const [
-                        Icon(Icons.arrow_back_ios_new, color: Color(0xFFF472B6), size: 18),
-                        SizedBox(width: 6),
-                        Text(
-                          'Quay lại',
-                          style: TextStyle(color: Color(0xFFF472B6), fontWeight: FontWeight.w500),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 14),
-
               Center(
                 child: ConstrainedBox(
                   constraints: const BoxConstraints(maxWidth: 520),
@@ -93,6 +72,25 @@ class _SettingProfileState extends State<SettingProfile> {
                     ),
                     child: Column(
                       children: [
+                        Row(
+                          children: [
+                            GestureDetector(
+                              onTap: () => Navigator.maybePop(context),
+                              child: Row(
+                                children: const [
+                                  Icon(Icons.arrow_back_ios_new, color: Color(0xFFF472B6), size: 18),
+                                  SizedBox(width: 6),
+                                  Text(
+                                    'Quay lại',
+                                    style: TextStyle(color: Color(0xFFF472B6), fontWeight: FontWeight.w500),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 14),
+
                         Row(
                           children: [
                             Container(
