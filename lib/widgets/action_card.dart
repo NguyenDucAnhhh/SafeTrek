@@ -30,9 +30,9 @@ class ActionCard extends StatelessWidget {
         leading: Container(
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
-              color: iconBgColor,
-              shape: BoxShape.rectangle,
-              borderRadius: BorderRadius.circular(10)
+            color: iconBgColor,
+            shape: BoxShape.rectangle,
+            borderRadius: BorderRadius.circular(10)
           ),
           child: Icon(icon, color: iconColor),
         ),
