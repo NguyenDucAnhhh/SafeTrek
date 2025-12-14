@@ -53,7 +53,7 @@ class _StartTripState extends State<StartTrip> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const SecondaryHeader(title: 'Thiết lập Chuyến đi'),
+            const SecondaryHeader(title: 'Quay lại'),
             Expanded(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
