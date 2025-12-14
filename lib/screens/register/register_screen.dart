@@ -114,10 +114,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   Widget _buildStep1Form() {
-    return Card(
-      elevation: 2,
-      shadowColor: Colors.black.withOpacity(0.1),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 20,
+            spreadRadius: 2,
+            offset: const Offset(0, 8)
+          )
+        ]
+      ),
       child: Padding(
         padding: const EdgeInsets.all(24.0),
         child: Column(
@@ -170,10 +179,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   Widget _buildStep2Form() {
-    return Card(
-      elevation: 2,
-      shadowColor: Colors.black.withOpacity(0.1),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+    return Container(
+      decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 20,
+                spreadRadius: 2,
+                offset: const Offset(0, 8)
+            )
+          ]
+      ),
       child: Padding(
         padding: const EdgeInsets.all(24.0),
         child: Column(

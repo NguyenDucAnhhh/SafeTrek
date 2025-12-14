@@ -25,14 +25,6 @@ class _LoginScreenState extends State<LoginScreen> {
             end: Alignment.bottomCenter,
             colors: [Color(0xFFEFF6FF), Color(0xFFE0E7FF)],
           ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withAlpha(70), // Màu bóng hơi đen và trong suốt
-              blurRadius: 10, // Rất mờ (tạo cảm giác mềm mại)
-              spreadRadius: 2, // Lan rộng một chút
-              offset: const Offset(0, 5), // Đổ bóng xuống dưới
-            )
-          ]
         ),
         child: SafeArea(
           child: SingleChildScrollView(
@@ -42,11 +34,18 @@ class _LoginScreenState extends State<LoginScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 const SizedBox(height: 20),
-                Card(
-                  elevation: 10,
-                  shadowColor: Colors.black.withOpacity(0.1),
-                  shape: RoundedRectangleBorder(
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
                     borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.12),
+                        blurRadius: 20,
+                        spreadRadius: 2,
+                        offset: const Offset(0, 8),
+                      ),
+                    ],
                   ),
                   child: Padding(
                     padding: const EdgeInsets.all(24.0),
@@ -104,7 +103,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         TextField(
                           obscureText: !_isPasswordVisible,
                           decoration: InputDecoration(
-                            hintText: '11111111',
+                            hintText: '*******',
                             filled: true,
                             fillColor: const Color(0xFFF3F4F6),
                             contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -159,21 +158,27 @@ class _LoginScreenState extends State<LoginScreen> {
                       'Chưa có tài khoản?',
                       style: TextStyle(color: Colors.grey),
                     ),
-                    TextButton(
+                    const SizedBox(height: 10),
+                    OutlinedButton(
+                      onPressed: (){
+                        Navigator.of(context).push(MaterialPageRoute(
+                          builder: (context) => const RegisterScreen(),
+                        ));
+                      },
                       style: ButtonStyle(
+                        shape: WidgetStateProperty.all(
+                          RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8.0),
+                          )
+                        ),
                         side: WidgetStateProperty.all(
                           BorderSide(
                             color: Colors.blue, // Màu của viền
-                            width: 2,           // Độ dày của viền
-                            style: BorderStyle.solid, // Kiểu viền (solid, dashed, v.v.)
-                          ),
+                            width: 1.5,           // Độ dày của viền
+                          )
                         ),
+                        backgroundColor: WidgetStateProperty.all(Colors.white),
                       ),
-                      onPressed: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(builder: (context) => const RegisterScreen()),
-                        );
-                      },
                       child: const Text(
                         'Tạo tài khoản mới',
                         style: TextStyle(
