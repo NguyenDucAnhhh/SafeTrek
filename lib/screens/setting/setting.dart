@@ -18,8 +18,9 @@ class Setting extends StatefulWidget {
 }
 
 class _SettingState extends State<Setting> {
-  bool _hasSafePin = false;
-  bool _hasDuressPin = false;
+
+  bool _showSuccessSnackBar = false;
+
   int _selectedIndex = 2;
   void _onItemTapped(int index) {
     setState(() {
@@ -52,11 +53,17 @@ class _SettingState extends State<Setting> {
                 iconColor: const Color(0xFF1B388E),
                 iconBgColor: const Color(0xFFDBEAFE),
                 title: 'Thông tin cá nhân',
-                onTap: () {
-                  Navigator.push(
+                onTap: () async {
+                  final result = await Navigator.push(
                     context,
                     MaterialPageRoute(builder: (context) => const SettingProfile()),
                   );
+                  if (result == true) {
+                    setState(() {
+                      _showSuccessSnackBar = true;
+                    });
+                    showSuccessSnackBar(context, 'Thông tin cá nhân đã được cập nhật!');
+                  }
                 },
               ),
               SettingCard(
@@ -64,11 +71,17 @@ class _SettingState extends State<Setting> {
                 iconColor: const Color(0xFF8B5CF6),
                 iconBgColor: const Color(0xFFF5F3FF),
                 title: 'Đổi mật khẩu',
-                onTap: () {
-                  Navigator.push(
+                onTap: () async {
+                  final result = await Navigator.push(
                     context,
                     MaterialPageRoute(builder: (context) => const SettingPassword()),
                   );
+                  if (result == true) {
+                    setState(() {
+                      _showSuccessSnackBar = true;
+                    });
+                    showSuccessSnackBar(context, 'Mật khẩu đã được cập nhật!');
+                  }
                 },
               ),
               SettingCard(
@@ -83,7 +96,7 @@ class _SettingState extends State<Setting> {
                   );
                   if (result == true) {
                     setState(() {
-                      _hasSafePin = true;
+                      _showSuccessSnackBar = true;
                     });
                     showSuccessSnackBar(context, 'Mã PIN an toàn đã được cập nhật!');
                   }
@@ -101,7 +114,7 @@ class _SettingState extends State<Setting> {
                   );
                   if (result == true) {
                     setState(() {
-                      _hasDuressPin = true;
+                      _showSuccessSnackBar = true;
                     });
                     showSuccessSnackBar(context, 'Mã PIN ép buộc đã được cập nhật!');
                   }
