@@ -60,7 +60,6 @@ class _StartTripState extends State<StartTrip> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    const SizedBox(height: 10),
                     _buildDestinationCard(),
                     const SizedBox(height: 20),
                     _buildTimeCard(),
