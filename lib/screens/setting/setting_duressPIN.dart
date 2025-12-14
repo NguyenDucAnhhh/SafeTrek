@@ -128,7 +128,7 @@ class _SettingDuressPINState extends State<SettingDuressPIN> {
                       const SizedBox(height: 22),
 
                       const Text(
-                        "Nhập mã PIN cũ (4 chữ số)",
+                        "Mã PIN cũ (4 chữ số)",
                         style: TextStyle(
                           fontSize: 13,
                           color: Color(0xFF4B5563),
@@ -145,7 +145,7 @@ class _SettingDuressPINState extends State<SettingDuressPIN> {
                       const SizedBox(height: 14),
 
                       const Text(
-                        "Nhập mã PIN mới (4 chữ số)",
+                        "Mã PIN mới (4 chữ số)",
                         style: TextStyle(
                           fontSize: 13,
                           color: Color(0xFF4B5563),
@@ -162,7 +162,7 @@ class _SettingDuressPINState extends State<SettingDuressPIN> {
                       const SizedBox(height: 14),
 
                       const Text(
-                        "Nhập lại mã PIN mới (4 chữ số)",
+                        "Xác nhận mã PIN mới (4 chữ số)",
                         style: TextStyle(
                           fontSize: 13,
                           color: Color(0xFF4B5563),
