@@ -30,10 +30,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: CustomAppBar(
-        subtitle: 'Tạo tài khoản mới',
-        bottom: _buildProgressIndicator(),
-      ),
+      appBar: CustomAppBar(),
       body: Container(
         width: double.infinity,
         height: double.infinity,
@@ -51,6 +48,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                _buildProgressIndicator(),
                 const SizedBox(height: 20),
                 _currentStep == 1 ? _buildStep1Form() : _buildStep2Form(),
                 const SizedBox(height: 24),
