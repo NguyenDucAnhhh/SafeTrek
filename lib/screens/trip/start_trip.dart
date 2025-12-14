@@ -50,12 +50,12 @@ class _StartTripState extends State<StartTrip> {
             colors: [Color(0xFFF1F4FF), Color(0xFFE2E9FF)],
           ),
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const SecondaryHeader(title: 'Quay lại'),
-            Expanded(
-              child: SingleChildScrollView(
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const SecondaryHeader(title: 'Quay lại',),
+              Padding(
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -96,8 +96,8 @@ class _StartTripState extends State<StartTrip> {
                   ],
                 ), 
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
       bottomNavigationBar: BottomNavigation(
