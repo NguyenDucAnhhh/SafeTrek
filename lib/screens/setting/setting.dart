@@ -10,6 +10,8 @@ import 'package:safetrek_project/screens/setting/setting_safePIN.dart';
 import 'package:safetrek_project/screens/setting/setting_duressPIN.dart';
 import 'package:safetrek_project/screens/setting/setting_hidden_panic.dart';
 
+import 'package:safetrek_project/screens/login/login.dart';
+
 class Setting extends StatefulWidget {
   const Setting({super.key});
 
@@ -27,6 +29,81 @@ class _SettingState extends State<Setting> {
       _selectedIndex = index;
     });
   }
+
+  void _handleLogout() async {
+    final bool? confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFFFEF2F2),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: BorderSide(color: Colors.red.shade200, width: 1),
+        ),
+        title: const Text(
+          'Đăng xuất',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 18,
+            color: Color(0xFFB91C1C),
+          ),
+        ),
+        content: const Text(
+          'Bạn có chắc chắn muốn đăng xuất không?',
+          style: TextStyle(
+            fontSize: 16,
+            color: Color(0xFF991B1B),
+          ),
+        ),
+        actions: [
+          OutlinedButton(
+            onPressed: () => Navigator.pop(context, false),
+            style: OutlinedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 35, vertical: 10),
+              side: BorderSide(color: Colors.grey.shade400),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(30),
+              ),
+            ),
+            child: const Text(
+              'Hủy',
+              style: TextStyle(color: Colors.black87, fontSize: 16),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFDC2626),
+              padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 10),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(30),
+              ),
+            ),
+            child: const Text(
+              'Đồng ý',
+              style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+          ),
+        ],
+        actionsAlignment: MainAxisAlignment.spaceEvenly,
+        actionsPadding: const EdgeInsets.only(bottom: 16, top: 8),
+      ),
+    );
+
+    if (confirm != true || !mounted) return;
+
+    // TODO: Xóa dữ liệu đăng nhập
+    // await AuthService.logout();
+    // await SecureStorage.clear();
+
+    // Điều hướng về màn Login (xoá toàn bộ stack)
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (_) => const LoginScreen ()),
+          (route) => false,
+    );
+
+    // Thông báo có thể được xử lý trên màn hình login để tránh lỗi context.
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -167,9 +244,9 @@ class _SettingState extends State<Setting> {
                 iconBgColor: const Color(0xFFFEE2E2),
                 title: 'Đăng xuất',
                 subtitle: 'Thoát khỏi tài khoản',
-                onTap: () {
-                  // TODO: Implement logout functionality
-                },
+                onTap:
+                  _handleLogout,
+
               ),
             ],
           ),
