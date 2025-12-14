@@ -10,14 +10,12 @@ class SettingProfile extends StatefulWidget {
 }
 
 class _SettingProfileState extends State<SettingProfile> {
-  final _formKey = GlobalKey<FormState>();
 
   int _selectedIndex = 2;
   void _onItemTapped(int index) {
     setState(() => _selectedIndex = index);
   }
 
-  @override
   InputDecoration _inputDecoration({required String hint, IconData? prefixIcon}) {
     return InputDecoration(
       hintText: hint,
