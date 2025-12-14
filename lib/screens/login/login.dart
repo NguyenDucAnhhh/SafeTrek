@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:safetrek_project/screens/register/register_screen.dart';
 import 'package:safetrek_project/widgets/app_bar.dart';
 
-class Login extends StatefulWidget {
-  const Login({super.key});
+class LoginScreen extends StatefulWidget {
+  const LoginScreen({super.key});
 
   @override
-  State<Login> createState() => _LoginState();
+  State<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _LoginState extends State<Login> {
+class _LoginScreenState extends State<LoginScreen> {
   bool _isPasswordVisible = false;
 
   @override
@@ -18,12 +19,20 @@ class _LoginState extends State<Login> {
       body: Container(
         width: double.infinity,
         height: double.infinity,
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [Color(0xFFEFF6FF), Color(0xFFE0E7FF)],
           ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withAlpha(70), // Màu bóng hơi đen và trong suốt
+              blurRadius: 10, // Rất mờ (tạo cảm giác mềm mại)
+              spreadRadius: 2, // Lan rộng một chút
+              offset: const Offset(0, 5), // Đổ bóng xuống dưới
+            )
+          ]
         ),
         child: SafeArea(
           child: SingleChildScrollView(
@@ -34,7 +43,7 @@ class _LoginState extends State<Login> {
               children: [
                 const SizedBox(height: 20),
                 Card(
-                  elevation: 2,
+                  elevation: 10,
                   shadowColor: Colors.black.withOpacity(0.1),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(16),
@@ -143,7 +152,7 @@ class _LoginState extends State<Login> {
                   ),
                 ),
                 const SizedBox(height: 32),
-                Row(
+                Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     const Text(
@@ -151,7 +160,20 @@ class _LoginState extends State<Login> {
                       style: TextStyle(color: Colors.grey),
                     ),
                     TextButton(
-                      onPressed: () {},
+                      style: ButtonStyle(
+                        side: WidgetStateProperty.all(
+                          BorderSide(
+                            color: Colors.blue, // Màu của viền
+                            width: 2,           // Độ dày của viền
+                            style: BorderStyle.solid, // Kiểu viền (solid, dashed, v.v.)
+                          ),
+                        ),
+                      ),
+                      onPressed: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(builder: (context) => const RegisterScreen()),
+                        );
+                      },
                       child: const Text(
                         'Tạo tài khoản mới',
                         style: TextStyle(
@@ -162,7 +184,7 @@ class _LoginState extends State<Login> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 32),
+                const SizedBox(height: 200),
                 const Text(
                   '© 2025 SafeTrek. Bảo vệ an toàn của bạn.',
                   textAlign: TextAlign.center,

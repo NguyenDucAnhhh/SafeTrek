@@ -1,7 +1,16 @@
 import 'package:flutter/material.dart';
 
 class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
-  const CustomAppBar({super.key});
+  final String title;
+  final String subtitle;
+  final PreferredSizeWidget? bottom;
+
+  const CustomAppBar({
+    super.key,
+    this.title = 'SafeTrek',
+    this.subtitle = 'Giữ bạn an toàn trên mọi hành trình',
+    this.bottom,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -9,33 +18,22 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
       elevation: 0,
       toolbarHeight: 60,
       automaticallyImplyLeading: false,
-      flexibleSpace: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(8),
-        decoration: const BoxDecoration(
-            gradient: LinearGradient(
-                begin: Alignment(0.5, 0),
-                end: Alignment(0.5, 1),
-                colors: [Color(0xFF1E90FF), Color(0xFF0066CC)])),
-      ),
+      backgroundColor: const Color(0xFF1877F2), // Use solid color to match design
       title: Row(
         children: [
-          Container(
-            padding: const EdgeInsets.all(6),
-            child: const Icon(
-              Icons.shield_outlined,
-              size: 32,
-              color: Colors.white,
-            ),
+          const Icon(
+            Icons.shield_outlined,
+            size: 32,
+            color: Colors.white,
           ),
           const SizedBox(width: 8),
           Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
-            children: const [
+            children: [
               Text(
-                'SafeTrek',
-                style: TextStyle(
+                title,
+                style: const TextStyle(
                   color: Colors.white,
                   fontSize: 18,
                   fontFamily: 'Arimo',
@@ -44,8 +42,8 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
                 ),
               ),
               Text(
-                'Giữ bạn an toàn trên mọi hành trình',
-                style: TextStyle(
+                subtitle,
+                style: const TextStyle(
                   color: Color(0xFFDAEAFE),
                   fontSize: 11,
                   fontFamily: 'Arimo',
@@ -57,9 +55,10 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
           )
         ],
       ),
+      bottom: bottom,
     );
   }
 
   @override
-  Size get preferredSize => const Size.fromHeight(60);
+  Size get preferredSize => Size.fromHeight(60 + (bottom?.preferredSize.height ?? 0));
 }
