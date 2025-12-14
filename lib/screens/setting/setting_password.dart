@@ -210,10 +210,7 @@ class _SettingPasswordState extends State<SettingPassword> {
           ),
         ),
       ),
-      bottomNavigationBar: BottomNavigation(
-        currentIndex: _selectedIndex,
-        onTap: _onItemTapped,
-      ),
+
     );
   }
 }

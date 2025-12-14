@@ -245,10 +245,6 @@ class _SettingSafePINState extends State<SettingSafePIN> {
           ),
         ),
       ),
-      bottomNavigationBar: BottomNavigation(
-        currentIndex: _selectedIndex,
-        onTap: _onItemTapped,
-      ),
     );
   }
 }

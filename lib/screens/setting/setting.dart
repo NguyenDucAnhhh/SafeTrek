@@ -23,12 +23,7 @@ class _SettingState extends State<Setting> {
 
   bool _showSuccessSnackBar = false;
 
-  int _selectedIndex = 2;
-  void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
-  }
+
 
   void _handleLogout() async {
     final bool? confirm = await showDialog<bool>(
@@ -109,7 +104,6 @@ class _SettingState extends State<Setting> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: const CustomAppBar(),
       body: Container(
         width: double.infinity,
         height: double.infinity,
@@ -252,10 +246,6 @@ class _SettingState extends State<Setting> {
             ],
           ),
         ),
-      ),
-      bottomNavigationBar: BottomNavigation(
-        currentIndex: _selectedIndex,
-        onTap: _onItemTapped,
       ),
     );
   }

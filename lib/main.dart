@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:safetrek_project/screens/main_screen.dart';
+import 'package:safetrek_project/screens/splash/splash_screen.dart';
 import 'screens/guardians/guardians.dart';
 
 void main(){
@@ -12,7 +14,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'BTL',
-      home: GuardiansScreen(),
+      home: MainScreen(),
     );
   }
 }

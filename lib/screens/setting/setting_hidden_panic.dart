@@ -70,13 +70,9 @@ class _SettingHiddenPanicState extends State<SettingHiddenPanic> {
               const SizedBox(height: 24),
               _buildImportantNoteCard(),
             ],
-            const SizedBox(height: 120), // Spacer for bottom button
+            const SizedBox(height: 20), // Spacer for bottom button
           ],
         ),
-      ),
-      bottomNavigationBar: BottomNavigation(
-        currentIndex: _selectedIndex,
-        onTap: _onItemTapped,
       ),
     );
   }

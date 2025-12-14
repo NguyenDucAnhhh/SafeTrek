@@ -24,7 +24,6 @@ class _TripState extends State<Trip> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: const CustomAppBar(),
       body: Container(
         width: double.infinity,
         height: double.infinity,
@@ -109,10 +108,6 @@ class _TripState extends State<Trip> {
             ],
           ),
         ),
-      ),
-      bottomNavigationBar: BottomNavigation(
-        currentIndex: _selectedIndex,
-        onTap: _onItemTapped,
       ),
     );
   }

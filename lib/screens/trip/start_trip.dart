@@ -100,10 +100,6 @@ class _StartTripState extends State<StartTrip> {
           ),
         ),
       ),
-      bottomNavigationBar: BottomNavigation(
-        currentIndex: _selectedIndex,
-        onTap: _onItemTapped,
-      ),
     );
   }
 

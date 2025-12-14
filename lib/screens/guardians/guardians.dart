@@ -175,7 +175,7 @@ class _GuardiansScreenState extends State<GuardiansScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: const CustomAppBar(),
+
       body: Container(width: double.infinity,
         height: double.infinity,
         decoration: BoxDecoration(
@@ -310,10 +310,6 @@ class _GuardiansScreenState extends State<GuardiansScreen> {
             ],
           ),
         ),
-      ),
-      bottomNavigationBar: BottomNavigation(
-        currentIndex: _selectedIndex,
-        onTap: _onItemTapped,
       ),
     );
   }

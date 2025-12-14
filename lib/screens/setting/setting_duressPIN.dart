@@ -238,10 +238,7 @@ class _SettingDuressPINState extends State<SettingDuressPIN> {
           ),
         ),
       ),
-      bottomNavigationBar: BottomNavigation(
-        currentIndex: _selectedIndex,
-        onTap: _onItemTapped,
-      ),
+
     );
   }
 }

@@ -216,10 +216,7 @@ class _SettingProfileState extends State<SettingProfile> {
           ),
         ),
       ),
-      bottomNavigationBar: BottomNavigation(
-        currentIndex: _selectedIndex,
-        onTap: _onItemTapped,
-      ),
+
     );
   }
 }

@@ -107,10 +107,6 @@ class _TripHistoryState extends State<TripHistory> {
           ],
         ),
       ),
-      bottomNavigationBar: BottomNavigation(
-        currentIndex: _selectedIndex,
-        onTap: _onItemTapped,
-      ),
     );
   }
   
