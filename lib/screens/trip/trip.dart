@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:safetrek_project/screens/trip/start_trip.dart';
+import 'package:safetrek_project/screens/trip/trip_history.dart';
 import 'package:safetrek_project/widgets/action_card.dart';
 import 'package:safetrek_project/widgets/app_bar.dart';
 import 'package:safetrek_project/widgets/bottom_navigation.dart';
@@ -58,8 +59,13 @@ class _TripState extends State<Trip> {
                 iconColor: Colors.blue,
                 iconBgColor: Colors.blue.shade50,
                 title: "Lịch sử Chuyến đi",
-                subtitle: "0 chuyến đi",
-                onTap: () {},
+                subtitle: "0 chuyến đi", // You can update this dynamically
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const TripHistory()),
+                  );
+                },
               ),
               const SizedBox(height: 40),
               const EmergencyButton(),
