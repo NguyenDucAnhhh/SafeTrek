@@ -12,7 +12,7 @@ class SecondaryHeader extends StatelessWidget {
       child: Row(
         children: [
           IconButton(
-            icon: const Icon(Icons.arrow_back, color: Color(0xFF1E90FF)),
+            icon: const Icon(Icons.arrow_back_ios_new, color: Color(0xFFF472B6),size:18),
             onPressed: () {
               if (Navigator.canPop(context)) {
                 Navigator.of(context).pop();
@@ -22,10 +22,8 @@ class SecondaryHeader extends StatelessWidget {
           Text(
             title,
             style: const TextStyle(
-              color: Color(0xFF1E90FF),
-              fontWeight: FontWeight.bold,
-              fontSize: 18,
-              fontFamily: 'Arimo',
+              color: Color(0xFFF472B6),
+              fontWeight: FontWeight.w500,
             ),
           ),
         ],
