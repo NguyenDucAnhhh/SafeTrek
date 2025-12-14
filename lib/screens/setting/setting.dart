@@ -58,6 +58,7 @@ class _SettingState extends State<Setting> {
           OutlinedButton(
             onPressed: () => Navigator.pop(context, false),
             style: OutlinedButton.styleFrom(
+              backgroundColor: Colors.grey.shade200,
               padding: const EdgeInsets.symmetric(horizontal: 35, vertical: 10),
               side: BorderSide(color: Colors.grey.shade400),
               shape: RoundedRectangleBorder(
