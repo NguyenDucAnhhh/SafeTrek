@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:safetrek_project/screens/trip/trip_monitoring.dart';
 import 'package:safetrek_project/widgets/app_bar.dart';
 import 'package:safetrek_project/widgets/bottom_navigation.dart';
+import 'package:safetrek_project/widgets/secondary_header.dart';
 
 class StartTrip extends StatefulWidget {
   const StartTrip({super.key});
@@ -52,31 +53,13 @@ class _StartTripState extends State<StartTrip> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            const SecondaryHeader(title: 'Thiết lập Chuyến đi'),
             Expanded(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    InkWell(
-                      onTap: () {
-                        Navigator.pop(context); // Quay lại trang trước
-                      },
-                      child: Row(
-                        children: const [
-                          Icon(Icons.arrow_back_ios_new, size: 18, color: Colors.blue),
-                          SizedBox(width: 8),
-                          Text(
-                            "Thiết lập Chuyến đi",
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.blue,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
                     const SizedBox(height: 10),
                     _buildDestinationCard(),
                     const SizedBox(height: 20),

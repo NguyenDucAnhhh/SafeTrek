@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:safetrek_project/widgets/app_bar.dart';
 import 'package:safetrek_project/widgets/bottom_navigation.dart';
+import 'package:safetrek_project/widgets/secondary_header.dart';
 
 // A mock data model for a trip
 class TripInfo {
@@ -54,7 +55,7 @@ class _TripHistoryState extends State<TripHistory> {
         ),
         child: Column(
           children: [
-            _buildSecondaryHeader(context),
+            const SecondaryHeader(title: 'Quay lại'),
             Card(
               elevation: 2,
               color: Colors.white,
@@ -109,33 +110,6 @@ class _TripHistoryState extends State<TripHistory> {
       bottomNavigationBar: BottomNavigation(
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,
-      ),
-    );
-  }
-
-  Widget _buildSecondaryHeader(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
-      child: Row(
-        children: [
-          IconButton(
-            icon: const Icon(Icons.arrow_back, color: Color(0xFF1E90FF)),
-            onPressed: () {
-              if (Navigator.canPop(context)) {
-                Navigator.of(context).pop();
-              }
-            },
-          ),
-          const Text(
-            'Quay lại',
-            style: TextStyle(
-              color: Color(0xFF1E90FF),
-              fontWeight: FontWeight.bold,
-              fontSize: 18,
-              fontFamily: 'Arimo',
-            ),
-          ),
-        ],
       ),
     );
   }
