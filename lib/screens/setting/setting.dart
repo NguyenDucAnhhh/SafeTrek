@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:safetrek_project/widgets/app_bar.dart';
 import 'package:safetrek_project/widgets/bottom_navigation.dart';
+import 'package:safetrek_project/widgets/setting_card.dart';
 import 'package:safetrek_project/widgets/action_card.dart';
 import 'package:safetrek_project/widgets/show_success_snack_bar.dart';
 import 'package:safetrek_project/screens/setting/setting_profile.dart';
+import 'package:safetrek_project/screens/setting/setting_password.dart';
 import 'package:safetrek_project/screens/setting/setting_safePIN.dart';
 import 'package:safetrek_project/screens/setting/setting_duressPIN.dart';
 import 'package:safetrek_project/screens/setting/setting_hidden_panic.dart';
@@ -16,13 +18,9 @@ class Setting extends StatefulWidget {
 }
 
 class _SettingState extends State<Setting> {
-  bool _hasProfile = false;
   bool _hasSafePin = false;
   bool _hasDuressPin = false;
-  bool _isStealthPanicOn = false;
-
   int _selectedIndex = 2;
-
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
@@ -49,12 +47,11 @@ class _SettingState extends State<Setting> {
             mainAxisAlignment: MainAxisAlignment.start,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              ActionCard(
+              SettingCard(
                 icon: Icons.person_outlined,
                 iconColor: const Color(0xFF1B388E),
                 iconBgColor: const Color(0xFFDBEAFE),
                 title: 'Thông tin cá nhân',
-                subtitle: _hasProfile ? 'Đã cài đặt' : 'Chưa cài đặt',
                 onTap: () {
                   Navigator.push(
                     context,
@@ -62,12 +59,23 @@ class _SettingState extends State<Setting> {
                   );
                 },
               ),
-              ActionCard(
+              SettingCard(
+                icon: Icons.lock_outlined,
+                iconColor: const Color(0xFF8B5CF6),
+                iconBgColor: const Color(0xFFF5F3FF),
+                title: 'Đổi mật khẩu',
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const SettingPassword()),
+                  );
+                },
+              ),
+              SettingCard(
                 icon: Icons.shield_outlined,
                 iconColor: const Color(0xFF0B7A4A),
                 iconBgColor: const Color(0xFFDCFCE7),
                 title: 'Mã PIN An toàn',
-                subtitle: _hasSafePin ? 'Đã cài đặt' : 'Chưa cài đặt',
                 onTap: () async {
                   final result = await Navigator.push(
                     context,
@@ -81,12 +89,11 @@ class _SettingState extends State<Setting> {
                   }
                 },
               ),
-              ActionCard(
+              SettingCard(
                 icon: Icons.report_problem_outlined,
                 iconColor: const Color(0xFFB91C1C),
                 iconBgColor: const Color(0xFFFFE2E2),
                 title: 'Mã PIN Bị ép buộc',
-                subtitle: _hasDuressPin ? 'Đã cài đặt' : 'Chưa cài đặt',
                 onTap: () async {
                   final result = await Navigator.push(
                     context,
@@ -100,12 +107,11 @@ class _SettingState extends State<Setting> {
                   }
                 },
               ),
-              ActionCard(
+              SettingCard(
                 icon: Icons.flash_on_outlined,
                 iconColor: const Color(0xFFB91C1C),
                 iconBgColor: const Color(0xFFFFE2E2),
                 title: 'Nút Hoảng loạn Ẩn',
-                subtitle: _isStealthPanicOn ? 'Đang bật' : 'Chưa bật',
                 onTap: () {
                   Navigator.push(
                     context,
@@ -114,6 +120,7 @@ class _SettingState extends State<Setting> {
                 },
               ),
               Container(
+                margin: const EdgeInsets.symmetric(vertical: 8.0),
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   color: const Color(0xFFEBF5FF),
@@ -140,7 +147,17 @@ class _SettingState extends State<Setting> {
                     _buildBulletPoint("Không chia sẻ mã PIN với ai"),
                   ],
                 ),
-              )
+              ),
+              ActionCard(
+                icon: Icons.logout,
+                iconColor: const Color(0xFFEF4444),
+                iconBgColor: const Color(0xFFFEE2E2),
+                title: 'Đăng xuất',
+                subtitle: 'Thoát khỏi tài khoản',
+                onTap: () {
+                  // TODO: Implement logout functionality
+                },
+              ),
             ],
           ),
         ),
