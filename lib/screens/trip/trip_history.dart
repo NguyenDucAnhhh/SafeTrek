@@ -42,7 +42,7 @@ class _TripHistoryState extends State<TripHistory> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: const CustomAppBar(),
+      appBar: const SecondaryHeader(title: 'Lịch sử chuyến đi',),
       body: Container(
         height: double.infinity,
         width: double.infinity,
@@ -55,7 +55,7 @@ class _TripHistoryState extends State<TripHistory> {
         ),
         child: Column(
           children: [
-            const SecondaryHeader(title: 'Quay lại'),
+            SizedBox(height: 20),
             Card(
               elevation: 2,
               color: Colors.white,

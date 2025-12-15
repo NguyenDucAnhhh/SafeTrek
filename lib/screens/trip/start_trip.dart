@@ -39,7 +39,7 @@ class _StartTripState extends State<StartTrip> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: const CustomAppBar(),
+      appBar: SecondaryHeader(title: 'Chọn chuyến đi'),
       body: Container(
         height: double.infinity,
         width: double.infinity,
@@ -54,7 +54,7 @@ class _StartTripState extends State<StartTrip> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const SecondaryHeader(title: 'Quay lại',),
+              SizedBox(height: 20,),
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                 child: Column(
