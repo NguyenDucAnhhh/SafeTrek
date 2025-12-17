@@ -156,10 +156,6 @@ class _TripMonitoringState extends State<TripMonitoring> {
           ),
         ),
       ),
-      bottomNavigationBar: BottomNavigation(
-        currentIndex: _selectedIndex,
-        onTap: _onItemTapped,
-      ),
     );
   }
 
