@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:safetrek_project/widgets/app_bar.dart';
-import 'package:safetrek_project/widgets/bottom_navigation.dart';
+import 'package:safetrek_project/widgets/secondary_header.dart';
 
 // Enum for activation methods to avoid using raw strings
 enum ActivationMethod { volume, power }
@@ -14,11 +13,6 @@ class SettingHiddenPanic extends StatefulWidget {
 
 class _SettingHiddenPanicState extends State<SettingHiddenPanic> {
 
-  int _selectedIndex = 2;
-  void _onItemTapped(int index) {
-    setState(() => _selectedIndex = index);
-  }
-
   // --- STATE ---
   bool _isEnabled = false;
   ActivationMethod _selectedMethod = ActivationMethod.volume;
@@ -29,7 +23,7 @@ class _SettingHiddenPanicState extends State<SettingHiddenPanic> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF3F5FF),
-      appBar: const CustomAppBar(),
+      appBar: SecondaryHeader(title: 'Nút hoảng loạn ẩn'),
       body: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 16.0),
         child: Column(
@@ -93,25 +87,6 @@ class _SettingHiddenPanicState extends State<SettingHiddenPanic> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          GestureDetector(
-            onTap: () => Navigator.maybePop(context),
-            child: Row(
-              children: const [
-                Icon(Icons.arrow_back_ios_new,
-                    size: 18, color: Color(0xFFF472B6)),
-                SizedBox(width: 6),
-                Text(
-                  "Quay lại",
-                  style: TextStyle(
-                    color: Color(0xFFF472B6),
-                    fontWeight: FontWeight.w500,
-                  ),
-                )
-              ],
-            ),
-          ),
-          const SizedBox(height: 14),
-
           Row(
             children: [
               Container(

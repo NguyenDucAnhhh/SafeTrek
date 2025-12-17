@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:safetrek_project/widgets/app_bar.dart';
-import 'package:safetrek_project/widgets/bottom_navigation.dart';
+import 'package:safetrek_project/widgets/secondary_header.dart';
 
 class SettingProfile extends StatefulWidget {
   const SettingProfile({super.key});
@@ -10,11 +9,6 @@ class SettingProfile extends StatefulWidget {
 }
 
 class _SettingProfileState extends State<SettingProfile> {
-
-  int _selectedIndex = 2;
-  void _onItemTapped(int index) {
-    setState(() => _selectedIndex = index);
-  }
 
   InputDecoration _inputDecoration({required String hint, IconData? prefixIcon}) {
     return InputDecoration(
@@ -37,7 +31,7 @@ class _SettingProfileState extends State<SettingProfile> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: const CustomAppBar(),
+      appBar: SecondaryHeader(title: 'Thông tin cá nhân'),
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
@@ -70,25 +64,6 @@ class _SettingProfileState extends State<SettingProfile> {
                     ),
                     child: Column(
                       children: [
-                        Row(
-                          children: [
-                            GestureDetector(
-                              onTap: () => Navigator.maybePop(context),
-                              child: Row(
-                                children: const [
-                                  Icon(Icons.arrow_back_ios_new, color: Color(0xFFF472B6), size: 18),
-                                  SizedBox(width: 6),
-                                  Text(
-                                    'Quay lại',
-                                    style: TextStyle(color: Color(0xFFF472B6), fontWeight: FontWeight.w500),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 14),
-
                         Row(
                           children: [
                             Container(

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:safetrek_project/widgets/app_bar.dart';
-import 'package:safetrek_project/widgets/bottom_navigation.dart';
+import 'package:safetrek_project/widgets/secondary_header.dart';
 
 class SettingDuressPIN extends StatefulWidget {
   const SettingDuressPIN({super.key});
@@ -11,12 +10,6 @@ class SettingDuressPIN extends StatefulWidget {
 
 class _SettingDuressPINState extends State<SettingDuressPIN> {
 
-  int _selectedIndex = 2;
-  void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
-  }
 
   @override
   InputDecoration _inputStyle() {
@@ -38,7 +31,7 @@ class _SettingDuressPINState extends State<SettingDuressPIN> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: const CustomAppBar(),
+      appBar: SecondaryHeader(title: 'Mã PIN ép buộc'),
       body: Container(
         width: double.infinity,
         decoration: const BoxDecoration(
@@ -73,25 +66,6 @@ class _SettingDuressPINState extends State<SettingDuressPIN> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      GestureDetector(
-                        onTap: () => Navigator.maybePop(context),
-                        child: Row(
-                          children: const [
-                            Icon(Icons.arrow_back_ios_new,
-                                size: 18, color: Color(0xFFF472B6)),
-                            SizedBox(width: 6),
-                            Text(
-                              "Quay lại",
-                              style: TextStyle(
-                                color: Color(0xFFF472B6),
-                                fontWeight: FontWeight.w500,
-                              ),
-                            )
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 14),
-
                       Row(
                         children: [
                           Container(
