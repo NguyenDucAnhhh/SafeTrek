@@ -3,7 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:safetrek_project/widgets/app_bar.dart';
 import 'package:safetrek_project/widgets/bottom_navigation.dart';
 import 'package:safetrek_project/widgets/emergency_button.dart';
+import 'package:safetrek_project/widgets/emergency_dialog.dart';
+import 'package:safetrek_project/widgets/error_dialog.dart';
 import 'package:safetrek_project/widgets/pin_input_dialog.dart';
+import 'package:safetrek_project/widgets/success_dialog.dart';
 
 class TripMonitoring extends StatefulWidget {
   final int durationInMinutes;
@@ -19,6 +22,9 @@ class _TripMonitoringState extends State<TripMonitoring> {
   late Timer _timer;
   late Duration _remainingTime;
 
+  // Hardcoded PIN for demonstration
+  final String _correctPin = "1234";
+
   @override
   void initState() {
     super.initState();
@@ -28,9 +34,19 @@ class _TripMonitoringState extends State<TripMonitoring> {
 
   void _startTimer() {
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (_remainingTime.inSeconds == 0) {
+      if (_remainingTime.inSeconds <= 0) {
         timer.cancel();
-        // TODO: Handle auto-sending alert when timer finishes
+        if (mounted) {
+          // Show dialog with the specific time-out message
+          showDialog(
+            context: context,
+            builder: (BuildContext context) {
+              return const EmergencyDialog(
+                message: "Người dùng đã không check-in an toàn sau chuyến đi.\n\nCảnh báo đã được gửi đến 1 người bảo vệ.\n\nThời gian: 23:44:17 8/12/2025",
+              );
+            },
+          );
+        }
       } else {
         if (mounted) {
           setState(() {
@@ -61,17 +77,51 @@ class _TripMonitoringState extends State<TripMonitoring> {
   }
 
   void _showPinDialog() async {
-    final result = await showDialog(
+    final enteredPin = await showDialog<String>(
       context: context,
-      barrierDismissible: false, // User must enter PIN
+      barrierDismissible: false,
       builder: (BuildContext context) {
         return const PinInputDialog();
       },
     );
 
-    if (result == true && mounted) {
+    if (enteredPin == null) return; // User cancelled
+
+    if (enteredPin == _correctPin) {
+      if (!mounted) return;
       _timer.cancel();
-      Navigator.pop(context); // Go back to the previous screen
+
+      await showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext context) {
+          return SuccessDialog(
+            title: "Check-in Thành công!",
+            message: "Chuyến đi đã kết thúc an toàn.",
+            onOkPressed: () {
+              Navigator.of(context).pop();
+            },
+          );
+        },
+      );
+
+      if (mounted) {
+        Navigator.of(context).pop();
+      }
+    } else {
+      if (!mounted) return;
+      await showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return ErrorDialog(
+            title: "Mã PIN không đúng",
+            message: "Vui lòng thử lại.",
+            onOkPressed: () {
+              Navigator.of(context).pop();
+            },
+          );
+        },
+      );
     }
   }
 
@@ -106,7 +156,10 @@ class _TripMonitoringState extends State<TripMonitoring> {
           ),
         ),
       ),
-
+      bottomNavigationBar: BottomNavigation(
+        currentIndex: _selectedIndex,
+        onTap: _onItemTapped,
+      ),
     );
   }
 

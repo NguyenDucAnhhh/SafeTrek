@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
 class EmergencyDialog extends StatelessWidget {
-  const EmergencyDialog({super.key});
+  final String? message;
+
+  const EmergencyDialog({super.key, this.message});
 
   @override
   Widget build(BuildContext context) {
@@ -16,6 +18,10 @@ class EmergencyDialog extends StatelessWidget {
   }
 
   Widget contentBox(BuildContext context) {
+    // Default message if no message is provided
+    final String displayMessage = message ??
+        "Nút hoảng loạn đã được kích hoạt!\n\nCảnh báo đã được gửi đến 1 người bảo vệ.\n\nThời gian: 23:38:55 8/12/2025";
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -60,9 +66,9 @@ class EmergencyDialog extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 15),
-          const Text(
-            "Nút hoảng loạn đã được kích hoạt!\n\nCảnh báo đã được gửi đến 1 người bảo vệ.\n\nThời gian: 23:38:55 8/12/2025",
-            style: TextStyle(
+          Text(
+            displayMessage, // Use the dynamic message
+            style: const TextStyle(
               fontSize: 14,
               color: Colors.white,
             ),

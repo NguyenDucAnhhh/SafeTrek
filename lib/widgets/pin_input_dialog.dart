@@ -17,6 +17,11 @@ class _PinInputDialogState extends State<PinInputDialog> {
     super.dispose();
   }
 
+  void _onConfirm() {
+    // Return the entered PIN to the caller
+    Navigator.of(context).pop(_pinController.text);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Dialog(
@@ -69,7 +74,7 @@ class _PinInputDialogState extends State<PinInputDialog> {
             keyboardType: TextInputType.number,
             obscureText: true,
             maxLength: 4,
-            // textAlign: TextAlign.center, // Removed to align hint to the start
+            textAlign: TextAlign.start, // Align to the start
             style: const TextStyle(fontSize: 24, letterSpacing: 16),
             decoration: InputDecoration(
               counterText: "",
@@ -112,9 +117,7 @@ class _PinInputDialogState extends State<PinInputDialog> {
               const SizedBox(width: 16),
               Expanded(
                 child: ElevatedButton(
-                  onPressed: () {
-                    Navigator.of(context).pop(true);
-                  },
+                  onPressed: _onConfirm, // Call the confirm handler
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF3C8BFF),
                     shape: RoundedRectangleBorder(
