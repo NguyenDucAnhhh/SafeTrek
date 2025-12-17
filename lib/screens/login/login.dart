@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:safetrek_project/screens/register/register_screen.dart';
 import 'package:safetrek_project/widgets/app_bar.dart';
+import 'package:safetrek_project/screens/main_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -128,7 +129,11 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         const SizedBox(height: 32),
                         ElevatedButton(
-                          onPressed: () {},
+                          onPressed: () {
+                            Navigator.of(context).push(MaterialPageRoute(
+                              builder: (context) => const MainScreen(),
+                            ));
+                          },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFF1877F2),
                             padding: const EdgeInsets.symmetric(vertical: 16),
