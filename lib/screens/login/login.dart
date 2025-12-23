@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:safetrek_project/screens/register/register_screen.dart';
 import 'package:safetrek_project/widgets/app_bar.dart';
 import 'package:safetrek_project/screens/main_screen.dart';
+import 'package:safetrek_project/screens/security/verify.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -151,6 +152,21 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                           ),
                         ),
+                        const SizedBox(height: 16),
+                        TextButton(
+                          onPressed: () {
+                            Navigator.of(context).push(MaterialPageRoute(
+                              builder: (context) => const Verify(),
+                            ));
+                          },
+                          child: const Text(
+                            "Quên mật khẩu ?",
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: const Color(0xFFF155DFC),
+                            ),
+                          ),
+                        )
                       ],
                     ),
                   ),
