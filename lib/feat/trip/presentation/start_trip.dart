@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:safetrek_project/screens/trip/trip_monitoring.dart';
-import 'package:safetrek_project/widgets/app_bar.dart';
-import 'package:safetrek_project/widgets/bottom_navigation.dart';
-import 'package:safetrek_project/widgets/secondary_header.dart';
+import 'package:safetrek_project/feat/trip/presentation/trip_monitoring.dart';
+import 'package:safetrek_project/core/widgets/app_bar.dart';
+import 'package:safetrek_project/core/widgets/bottom_navigation.dart';
+import 'package:safetrek_project/core/widgets/secondary_header.dart';
 
 class StartTrip extends StatefulWidget {
   const StartTrip({super.key});
@@ -39,7 +39,7 @@ class _StartTripState extends State<StartTrip> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: SecondaryHeader(title: 'Chọn chuyến đi'),
+      appBar: const SecondaryHeader(title: 'Chọn chuyến đi'),
       body: Container(
         height: double.infinity,
         width: double.infinity,
@@ -54,7 +54,7 @@ class _StartTripState extends State<StartTrip> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              SizedBox(height: 20,),
+              const SizedBox(height: 20,),
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                 child: Column(

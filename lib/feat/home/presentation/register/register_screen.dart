@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:safetrek_project/widgets/app_bar.dart';
+import 'package:safetrek_project/core/widgets/app_bar.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});

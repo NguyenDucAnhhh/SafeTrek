@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'guardians.dart';
+import '../domain/entity/Guardian.dart';
 
 class GuardianCard extends StatelessWidget {
   final Guardian guardian;

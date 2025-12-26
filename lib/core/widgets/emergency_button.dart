@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:safetrek_project/widgets/emergency_dialog.dart';
+import 'emergency_dialog.dart';
 
 class EmergencyButton extends StatelessWidget {
   const EmergencyButton({super.key});

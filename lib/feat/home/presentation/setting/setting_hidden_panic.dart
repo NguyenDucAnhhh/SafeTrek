@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:safetrek_project/widgets/secondary_header.dart';
+import 'package:safetrek_project/core/widgets/secondary_header.dart';
 
 // Enum for activation methods to avoid using raw strings
 enum ActivationMethod { volume, power }

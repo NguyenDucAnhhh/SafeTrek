@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:safetrek_project/screens/trip/start_trip.dart';
-import 'package:safetrek_project/screens/trip/trip_history.dart';
-import 'package:safetrek_project/widgets/action_card.dart';
-import 'package:safetrek_project/widgets/app_bar.dart';
-import 'package:safetrek_project/widgets/bottom_navigation.dart';
-import 'package:safetrek_project/widgets/emergency_button.dart';
+import 'package:safetrek_project/feat/trip/presentation/start_trip.dart';
+import 'package:safetrek_project/feat/trip/presentation/trip_history.dart';
+import 'package:safetrek_project/core/widgets/action_card.dart';
+import 'package:safetrek_project/core/widgets/app_bar.dart';
+import 'package:safetrek_project/core/widgets/bottom_navigation.dart';
+import 'package:safetrek_project/core/widgets/emergency_button.dart';
 
 class Trip extends StatefulWidget {
   const Trip({super.key});
@@ -27,11 +27,11 @@ class _TripState extends State<Trip> {
       body: Container(
         width: double.infinity,
         height: double.infinity,
-        decoration: BoxDecoration(
+        decoration: const BoxDecoration(
           gradient: LinearGradient(
-            begin: const Alignment(0.00, 0.30),
-            end: const Alignment(1.00, 0.70),
-            colors: [const Color(0xFFEFF6FF), const Color(0xFFE0E7FF)],
+            begin: Alignment(0.00, 0.30),
+            end: Alignment(1.00, 0.70),
+            colors: [Color(0xFFEFF6FF), Color(0xFFE0E7FF)],
           ),
         ),
         child: SingleChildScrollView(
@@ -58,7 +58,7 @@ class _TripState extends State<Trip> {
                 iconColor: Colors.blue,
                 iconBgColor: Colors.blue.shade50,
                 title: "Lịch sử Chuyến đi",
-                subtitle: "0 chuyến đi", // You can update this dynamically
+                subtitle: "0 chuyến đi",
                 onTap: () {
                   Navigator.push(
                     context,
@@ -85,8 +85,8 @@ class _TripState extends State<Trip> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      children: const [
+                    const Row(
+                      children: [
                         Icon(Icons.lightbulb_outline,
                             color: Colors.orange, size: 20),
                         SizedBox(width: 8),

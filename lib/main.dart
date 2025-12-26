@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:safetrek_project/screens/main_screen.dart';
-import 'package:safetrek_project/screens/splash/splash_screen.dart';
-import 'screens/guardians/guardians.dart';
+import 'package:safetrek_project/feat/home/presentation/splash/splash_screen.dart';
 
-void main(){
+void main() {
   runApp(const MyApp());
 }
+
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
@@ -13,8 +12,12 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'BTL',
-      home: SplashScreen(),
+      title: 'SafeTrek',
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
+        useMaterial3: true,
+      ),
+      home: const SplashScreen(),
     );
   }
 }

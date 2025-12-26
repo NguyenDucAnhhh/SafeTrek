@@ -1,9 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:safetrek_project/widgets/app_bar.dart';
-import 'package:safetrek_project/widgets/bottom_navigation.dart';
-import 'package:safetrek_project/widgets/emergency_button.dart';
-import 'package:safetrek_project/widgets/pin_input_dialog.dart';
+import 'package:safetrek_project/core/widgets/app_bar.dart';
+import 'package:safetrek_project/core/widgets/emergency_button.dart';
+import 'package:safetrek_project/core/widgets/pin_input_dialog.dart';
 
 class TripMonitoring extends StatefulWidget {
   final int durationInMinutes;

@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:safetrek_project/widgets/secondary_header.dart';
+import 'package:safetrek_project/core/widgets/secondary_header.dart';
 
-class SettingPassword extends StatefulWidget {
-  const SettingPassword({super.key});
+class SettingProfile extends StatefulWidget {
+  const SettingProfile({super.key});
 
   @override
-  State<SettingPassword> createState() => _SettingPasswordState();
+  State<SettingProfile> createState() => _SettingProfileState();
 }
 
-class _SettingPasswordState extends State<SettingPassword> {
+class _SettingProfileState extends State<SettingProfile> {
 
   InputDecoration _inputDecoration({required String hint, IconData? prefixIcon}) {
     return InputDecoration(
@@ -31,7 +31,7 @@ class _SettingPasswordState extends State<SettingPassword> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: SecondaryHeader(title: 'Thay đổi mật khẩu'),
+      appBar: SecondaryHeader(title: 'Thông tin cá nhân'),
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
@@ -70,10 +70,10 @@ class _SettingPasswordState extends State<SettingPassword> {
                               width: 46,
                               height: 46,
                               decoration: BoxDecoration(
-                                color: const Color(0xFFF3E8FF),
+                                color: const Color(0xFFDBEAFE),
                                 borderRadius: BorderRadius.circular(12),
                               ),
-                              child: const Icon(Icons.lock_outlined, color: Color(0xFF8B5CF6), size: 26),
+                              child: const Icon(Icons.person_outlined, color: Colors.blue, size: 26),
                             ),
                             const SizedBox(width: 12),
                             Expanded(
@@ -81,12 +81,12 @@ class _SettingPasswordState extends State<SettingPassword> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: const [
                                   Text(
-                                    'Thay đổi mật khẩu',
+                                    'Thông tin cá nhân',
                                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                                   ),
                                   SizedBox(height: 4),
                                   Text(
-                                    'Cập nhật mật khẩu tài khoản',
+                                    'Cập nhật thông tin liên hệ',
                                     style: TextStyle(fontSize: 13, color: Color(0xFF6A7282)),
                                   ),
                                 ],
@@ -103,13 +103,15 @@ class _SettingPasswordState extends State<SettingPassword> {
                                 alignment: Alignment.centerLeft,
                                 child: Row(
                                   children: const [
-                                    Text('Mật khẩu cũ', style: TextStyle(fontSize: 13, color: Color(0xFF4B5563))),
+                                    Icon(Icons.person_outline, size: 16, color: Colors.blue),
+                                    SizedBox(width: 8),
+                                    Text('Họ tên', style: TextStyle(fontSize: 13, color: Color(0xFF4B5563))),
                                   ],
                                 ),
                               ),
                               const SizedBox(height: 6),
                               TextFormField(
-                                decoration: _inputDecoration(hint: 'Mật khẩu cũ', prefixIcon: null),
+                                decoration: _inputDecoration(hint: 'Nguyễn Văn A', prefixIcon: null),
                               ),
                               const SizedBox(height: 12),
 
@@ -117,14 +119,16 @@ class _SettingPasswordState extends State<SettingPassword> {
                                 alignment: Alignment.centerLeft,
                                 child: Row(
                                   children: const [
-                                    Text('Mật khẩu mới', style: TextStyle(fontSize: 13, color: Color(0xFF4B5563))),
+                                    Icon(Icons.phone_outlined, size: 16, color: Colors.blue),
+                                    SizedBox(width: 8),
+                                    Text('Số điện thoại', style: TextStyle(fontSize: 13, color: Color(0xFF4B5563))),
                                   ],
                                 ),
                               ),
                               const SizedBox(height: 6),
                               TextFormField(
                                 keyboardType: TextInputType.phone,
-                                decoration: _inputDecoration(hint: 'Mật khẩu mới', prefixIcon: null),
+                                decoration: _inputDecoration(hint: '0912345678', prefixIcon: null),
                               ),
                               const SizedBox(height: 12),
 
@@ -132,14 +136,16 @@ class _SettingPasswordState extends State<SettingPassword> {
                                 alignment: Alignment.centerLeft,
                                 child: Row(
                                   children: const [
-                                    Text('Xác nhận mật khẩu mới', style: TextStyle(fontSize: 13, color: Color(0xFF4B5563))),
+                                    Icon(Icons.email_outlined, size: 16, color: Colors.blue),
+                                    SizedBox(width: 8),
+                                    Text('Email', style: TextStyle(fontSize: 13, color: Color(0xFF4B5563))),
                                   ],
                                 ),
                               ),
                               const SizedBox(height: 6),
                               TextFormField(
                                 keyboardType: TextInputType.emailAddress,
-                                decoration: _inputDecoration(hint: 'Xác nhận mật khẩu mới', prefixIcon: null),
+                                decoration: _inputDecoration(hint: 'example@gmail.com', prefixIcon: null),
                               ),
 
                               const SizedBox(height: 18),
@@ -166,7 +172,7 @@ class _SettingPasswordState extends State<SettingPassword> {
                                       alignment: Alignment.center,
                                       constraints: const BoxConstraints(minHeight: 44),
                                       child: const Text(
-                                        'Lưu mật khẩu',
+                                        'Lưu thông tin',
                                         style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.white),
                                       ),
                                     ),

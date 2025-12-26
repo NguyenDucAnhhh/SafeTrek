@@ -1,16 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:safetrek_project/widgets/app_bar.dart';
-import 'package:safetrek_project/widgets/bottom_navigation.dart';
-import 'package:safetrek_project/widgets/setting_card.dart';
-import 'package:safetrek_project/widgets/action_card.dart';
-import 'package:safetrek_project/widgets/show_success_snack_bar.dart';
-import 'package:safetrek_project/screens/setting/setting_profile.dart';
-import 'package:safetrek_project/screens/setting/setting_password.dart';
-import 'package:safetrek_project/screens/setting/setting_safePIN.dart';
-import 'package:safetrek_project/screens/setting/setting_duressPIN.dart';
-import 'package:safetrek_project/screens/setting/setting_hidden_panic.dart';
-
-import 'package:safetrek_project/screens/login/login.dart';
+import 'package:safetrek_project/core/widgets/app_bar.dart';
+import 'package:safetrek_project/core/widgets/bottom_navigation.dart';
+import 'package:safetrek_project/core/widgets/setting_card.dart';
+import 'package:safetrek_project/core/widgets/action_card.dart';
+import 'package:safetrek_project/core/widgets/show_success_snack_bar.dart';
+import 'setting_profile.dart';
+import 'setting_password.dart';
+import 'setting_safePIN.dart';
+import 'setting_duressPIN.dart';
+import 'setting_hidden_panic.dart';
+import '../login/login.dart';
 
 class Setting extends StatefulWidget {
   const Setting({super.key});
@@ -20,10 +19,7 @@ class Setting extends StatefulWidget {
 }
 
 class _SettingState extends State<Setting> {
-
   bool _showSuccessSnackBar = false;
-
-
 
   void _handleLogout() async {
     final bool? confirm = await showDialog<bool>(
@@ -87,19 +83,12 @@ class _SettingState extends State<Setting> {
 
     if (confirm != true || !mounted) return;
 
-    // TODO: Xóa dữ liệu đăng nhập
-    // await AuthService.logout();
-    // await SecureStorage.clear();
-
     // Điều hướng về màn Login (xoá toàn bộ stack)
     Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(builder: (_) => const LoginScreen ()),
-          (route) => false,
+      MaterialPageRoute(builder: (_) => const LoginScreen()),
+      (route) => false,
     );
-
-    // Thông báo có thể được xử lý trên màn hình login để tránh lỗi context.
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -107,11 +96,11 @@ class _SettingState extends State<Setting> {
       body: Container(
         width: double.infinity,
         height: double.infinity,
-        decoration: BoxDecoration(
+        decoration: const BoxDecoration(
           gradient: LinearGradient(
-            begin: const Alignment(0.00, 0.30),
-            end: const Alignment(1.00, 0.70),
-            colors: [const Color(0xFFEFF6FF), const Color(0xFFE0E7FF)],
+            begin: Alignment(0.00, 0.30),
+            end: Alignment(1.00, 0.70),
+            colors: [Color(0xFFEFF6FF), Color(0xFFE0E7FF)],
           ),
         ),
         child: SingleChildScrollView(
@@ -131,10 +120,9 @@ class _SettingState extends State<Setting> {
                     MaterialPageRoute(builder: (context) => const SettingProfile()),
                   );
                   if (result == true) {
-                    setState(() {
-                      _showSuccessSnackBar = true;
-                    });
-                    showSuccessSnackBar(context, 'Thông tin cá nhân đã được cập nhật!');
+                    if (mounted) {
+                      showSuccessSnackBar(context, 'Thông tin cá nhân đã được cập nhật!');
+                    }
                   }
                 },
               ),
@@ -149,10 +137,9 @@ class _SettingState extends State<Setting> {
                     MaterialPageRoute(builder: (context) => const SettingPassword()),
                   );
                   if (result == true) {
-                    setState(() {
-                      _showSuccessSnackBar = true;
-                    });
-                    showSuccessSnackBar(context, 'Mật khẩu đã được cập nhật!');
+                    if (mounted) {
+                      showSuccessSnackBar(context, 'Mật khẩu đã được cập nhật!');
+                    }
                   }
                 },
               ),
@@ -167,10 +154,9 @@ class _SettingState extends State<Setting> {
                     MaterialPageRoute(builder: (context) => const SettingSafePIN()),
                   );
                   if (result == true) {
-                    setState(() {
-                      _showSuccessSnackBar = true;
-                    });
-                    showSuccessSnackBar(context, 'Mã PIN an toàn đã được cập nhật!');
+                    if (mounted) {
+                      showSuccessSnackBar(context, 'Mã PIN an toàn đã được cập nhật!');
+                    }
                   }
                 },
               ),
@@ -185,10 +171,9 @@ class _SettingState extends State<Setting> {
                     MaterialPageRoute(builder: (context) => const SettingDuressPIN()),
                   );
                   if (result == true) {
-                    setState(() {
-                      _showSuccessSnackBar = true;
-                    });
-                    showSuccessSnackBar(context, 'Mã PIN ép buộc đã được cập nhật!');
+                    if (mounted) {
+                      showSuccessSnackBar(context, 'Mã PIN ép buộc đã được cập nhật!');
+                    }
                   }
                 },
               ),
@@ -215,8 +200,8 @@ class _SettingState extends State<Setting> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      children: const [
+                    const Row(
+                      children: [
                         Icon(Icons.lightbulb_outline, color: Colors.orange, size: 20),
                         SizedBox(width: 8),
                         Text(
@@ -239,9 +224,7 @@ class _SettingState extends State<Setting> {
                 iconBgColor: const Color(0xFFFEE2E2),
                 title: 'Đăng xuất',
                 subtitle: 'Thoát khỏi tài khoản',
-                onTap:
-                  _handleLogout,
-
+                onTap: _handleLogout,
               ),
             ],
           ),

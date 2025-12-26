@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:safetrek_project/widgets/app_bar.dart';
-import 'package:safetrek_project/widgets/bottom_navigation.dart';
-import 'package:safetrek_project/widgets/secondary_header.dart';
+import 'package:safetrek_project/core/widgets/app_bar.dart';
+import 'package:safetrek_project/core/widgets/bottom_navigation.dart';
+import 'package:safetrek_project/core/widgets/secondary_header.dart';
 
 // A mock data model for a trip
 class TripInfo {
@@ -22,16 +22,7 @@ class TripHistory extends StatefulWidget {
 class _TripHistoryState extends State<TripHistory> {
   int _selectedIndex = 0;
 
-  final List<TripInfo> _tripHistory = [
-    // TripInfo(
-    //     location: 'Hà Nội, Việt Nam',
-    //     timestamp: '23:42 06/12/2025 - 23:44 08/12/2025',
-    //     status: 'Cảnh báo'),
-    // TripInfo(
-    //     location: 'Hà Nội, Việt Nam',
-    //     timestamp: '23:42 06/12/2025 - 23:44 08/12/2025',
-    //     status: 'Hoàn thành'),
-  ];
+  final List<TripInfo> _tripHistory = [];
 
   void _onItemTapped(int index) {
     setState(() {
@@ -55,7 +46,7 @@ class _TripHistoryState extends State<TripHistory> {
         ),
         child: Column(
           children: [
-            SizedBox(height: 20),
+            const SizedBox(height: 20),
             Card(
               elevation: 2,
               color: Colors.white,
@@ -65,7 +56,7 @@ class _TripHistoryState extends State<TripHistory> {
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: Column(
-                  mainAxisSize: MainAxisSize.min, // Allow column to shrink
+                  mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
@@ -113,11 +104,10 @@ class _TripHistoryState extends State<TripHistory> {
   Widget _buildHistoryList() {
     return ConstrainedBox(
       constraints: const BoxConstraints(
-        // Set a max height for the list area (approx. 2 items)
         maxHeight: 150, 
       ),
       child: ListView.separated(
-        shrinkWrap: true, // Crucial for constrained height
+        shrinkWrap: true,
         itemCount: _tripHistory.length,
         separatorBuilder: (context, index) => const SizedBox(height: 16),
         itemBuilder: (context, index) {

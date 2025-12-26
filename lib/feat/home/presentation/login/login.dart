@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:safetrek_project/screens/register/register_screen.dart';
-import 'package:safetrek_project/widgets/app_bar.dart';
-import 'package:safetrek_project/screens/main_screen.dart';
+import '../register/register_screen.dart';
+import '../../../../core/widgets/app_bar.dart';
+import '../main_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -16,12 +16,12 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: CustomAppBar(),
+      appBar: const CustomAppBar(),
       body: Container(
         width: double.infinity,
         height: double.infinity,
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [Color(0xFFEFF6FF), Color(0xFFE0E7FF)],
@@ -177,7 +177,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           )
                         ),
                         side: WidgetStateProperty.all(
-                          BorderSide(
+                          const BorderSide(
                             color: Colors.blue, // Màu của viền
                             width: 1.5,           // Độ dày của viền
                           )

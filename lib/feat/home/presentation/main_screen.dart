@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:safetrek_project/screens/guardians/guardians.dart';
-import 'package:safetrek_project/screens/setting/setting.dart';
-import 'package:safetrek_project/screens/trip/trip.dart';
-import 'package:safetrek_project/widgets/app_bar.dart';
-import 'package:safetrek_project/widgets/bottom_navigation.dart';
+import '../../../../core/widgets/app_bar.dart';
+import '../../../../core/widgets/bottom_navigation.dart';
+import '../../guardians/presentation/guardians.dart';
+import '../../trip/presentation/trip.dart';
+import 'setting/setting.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -16,10 +16,10 @@ class _MainScreenState extends State<MainScreen> {
   int _selectedIndex = 0;
 
   // Danh sách các trang con tương ứng với các tab
-  static const List<Widget> _widgetOptions = <Widget>[
-    Trip(),
-    GuardiansScreen(),
-    Setting(),
+  final List<Widget> _widgetOptions = [
+    const Trip(),
+    const GuardiansScreen(),
+    const Setting(),
   ];
 
   // Hàm này sẽ được gọi khi một tab được nhấn

@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:safetrek_project/screens/login/login.dart';
+import 'package:safetrek_project/feat/home/presentation/login/login.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
