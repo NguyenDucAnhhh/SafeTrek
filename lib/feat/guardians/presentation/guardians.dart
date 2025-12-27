@@ -1,12 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../../core/widgets/app_bar.dart';
-import '../../../core/widgets/bottom_navigation.dart';
-import '../../../core/widgets/show_success_snack_bar.dart';
-import '../../guardians/presentation/bloc/guardian_bloc.dart';
-import '../../guardians/presentation/bloc/guardian_event.dart';
-import '../../guardians/presentation/bloc/guardian_state.dart';
-import '../domain/entity/Guardian.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+
+// Import các lớp Clean Architecture
+import 'package:safetrek_project/feat/guardians/data/data_source/guardian_remote_data_source.dart';
+import 'package:safetrek_project/feat/guardians/data/repository/guardian_repository_impl.dart';
+import 'package:safetrek_project/feat/guardians/domain/entity/Guardian.dart';
+
+// Import BLoC
+import 'package:safetrek_project/feat/guardians/presentation/bloc/guardian_bloc.dart';
+import 'package:safetrek_project/feat/guardians/presentation/bloc/guardian_event.dart';
+import 'package:safetrek_project/feat/guardians/presentation/bloc/guardian_state.dart';
+
+// Import Widgets
+import 'package:safetrek_project/core/widgets/show_success_snack_bar.dart';
 import 'guardiancard.dart';
 
 class GuardiansScreen extends StatelessWidget {
@@ -14,9 +21,12 @@ class GuardiansScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Khởi tạo và cung cấp Bloc cho màn hình này
     return BlocProvider(
-      create: (context) => GuardianBloc()..add(LoadGuardiansEvent()),
+      create: (context) => GuardianBloc(
+        GuardianRepositoryImpl(
+          GuardianRemoteDataSource(FirebaseFirestore.instance),
+        ),
+      )..add(LoadGuardiansEvent()),
       child: const GuardiansView(),
     );
   }
@@ -32,7 +42,7 @@ class GuardiansView extends StatelessWidget {
 
     showDialog(
       context: context,
-      builder: (BuildContext dialogContext) { 
+      builder: (BuildContext dialogContext) {
         return AlertDialog(
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20.0),
@@ -116,7 +126,7 @@ class GuardiansView extends StatelessWidget {
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(20),
                     ),
-                    padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 15),
+                    padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 15),
                   ),
                   child: const Text('Hủy'),
                 ),
@@ -128,10 +138,7 @@ class GuardiansView extends StatelessWidget {
                         phone: phoneController.text,
                         email: emailController.text.isNotEmpty ? emailController.text : null,
                       );
-
-                      // Gửi sự kiện Add vào Bloc
                       context.read<GuardianBloc>().add(AddGuardianEvent(newGuardian));
-
                       Navigator.of(dialogContext).pop();
                     }
                   },
@@ -141,7 +148,7 @@ class GuardiansView extends StatelessWidget {
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(20),
                     ),
-                    padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 15),
+                    padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 15),
                   ),
                   child: const Text('Thêm'),
                 ),
@@ -203,26 +210,34 @@ class GuardiansView extends StatelessWidget {
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    const Text(
-                                      'Danh bạ Khẩn cấp',
-                                      style: TextStyle(
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.bold,
+                                Expanded( // SỬA TẠI ĐÂY: Thêm Expanded để tiêu đề không chiếm hết chỗ
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      const Text(
+                                        'Danh bạ Khẩn cấp',
+                                        style: TextStyle(
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                        overflow: TextOverflow.ellipsis,
                                       ),
-                                    ),
-                                    Text('Quản lý người bảo vệ ($count/5)'),
-                                  ],
+                                      Text(
+                                        'Quản lý người bảo vệ ($count/5)',
+                                        style: const TextStyle(fontSize: 13),
+                                      ),
+                                    ],
+                                  ),
                                 ),
+                                const SizedBox(width: 8),
                                 ElevatedButton.icon(
                                   onPressed: () => _showAddGuardianDialog(context),
-                                  icon: const Icon(Icons.add),
+                                  icon: const Icon(Icons.add, size: 18),
                                   label: const Text('Thêm'),
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: const Color(0xFF1877F2),
                                     foregroundColor: Colors.white,
+                                    padding: const EdgeInsets.symmetric(horizontal: 12),
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(20),
                                     ),
@@ -244,10 +259,18 @@ class GuardiansView extends StatelessWidget {
                                         return GuardianCard(
                                           guardian: state.guardians[index],
                                           onRemove: () {
-                                            context.read<GuardianBloc>().add(
-                                                  RemoveGuardianEvent(state.guardians[index].phone),
-                                                );
+                                            if (state.guardians[index].id != null) {
+                                              context.read<GuardianBloc>().add(
+                                                RemoveGuardianEvent(state.guardians[index].id!), // Truyền id thật
+                                              );
+                                            } else {
+                                              // Nếu id null (do chưa load kịp), báo lỗi
+                                              ScaffoldMessenger.of(context).showSnackBar(
+                                                const SnackBar(content: Text("Không tìm thấy ID để xóa")),
+                                              );
+                                            }
                                           },
+
                                         );
                                       },
                                     )

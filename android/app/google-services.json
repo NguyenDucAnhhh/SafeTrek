@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1019543970250",
+    "project_id": "safetrek-2b5a0",
+    "storage_bucket": "safetrek-2b5a0.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1019543970250:android:4c01f7d73024ee3b8a6f33",
+        "android_client_info": {
+          "package_name": "com.example.safetrek_project"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDDogmOLJIpOOPuFA82V7IN8wxq97K5KRE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,8 +1,15 @@
 class Guardian {
+  final String? id; // Đây là ID từ Firestore
   final String name;
   final String phone;
   final String? email;
   final bool isAccepted;
 
-  Guardian({required this.name, required this.phone, this.email, this.isAccepted = false});
+  Guardian({
+    this.id, 
+    required this.name, 
+    required this.phone, 
+    this.email, 
+    this.isAccepted = false
+  });
 }

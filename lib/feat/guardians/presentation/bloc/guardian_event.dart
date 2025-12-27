@@ -23,10 +23,10 @@ class AddGuardianEvent extends GuardianEvent {
 
 /// Sự kiện xóa một người bảo vệ
 class RemoveGuardianEvent extends GuardianEvent {
-  final String phone;
+  final String docId;
 
-  const RemoveGuardianEvent(this.phone);
+  const RemoveGuardianEvent(this.docId);
 
   @override
-  List<Object?> get props => [phone];
+  List<Object?> get props => [docId];
 }
