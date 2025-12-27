@@ -3,9 +3,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../core/widgets/app_bar.dart';
 import '../../../core/widgets/bottom_navigation.dart';
 import '../../../core/widgets/show_success_snack_bar.dart';
-import '../../home/presentation/bloc/guardian_bloc.dart';
-import '../../home/presentation/bloc/guardian_event.dart';
-import '../../home/presentation/bloc/guardian_state.dart';
+import '../../guardians/presentation/bloc/guardian_bloc.dart';
+import '../../guardians/presentation/bloc/guardian_event.dart';
+import '../../guardians/presentation/bloc/guardian_state.dart';
 import '../domain/entity/Guardian.dart';
 import 'guardiancard.dart';
 
