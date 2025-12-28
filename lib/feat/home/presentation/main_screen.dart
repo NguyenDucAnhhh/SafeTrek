@@ -3,7 +3,7 @@ import '../../../../core/widgets/app_bar.dart';
 import '../../../../core/widgets/bottom_navigation.dart';
 import '../../guardians/presentation/guardians.dart';
 import '../../trip/presentation/trip.dart';
-import 'setting/setting.dart';
+import '../../setting/presentation/screens/setting.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
