@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 void showSuccessSnackBar(
     BuildContext context,
     String message, {
+      bool isError = false,
       Duration duration = const Duration(seconds: 3),
     }) {
   ScaffoldMessenger.of(context).showSnackBar(
@@ -19,7 +20,7 @@ void showSuccessSnackBar(
           ),
         ],
       ),
-      backgroundColor: const Color(0xFF10B981),
+      backgroundColor: isError ? Colors.red : Color(0xFF10B981),
       behavior: SnackBarBehavior.floating,
       margin: const EdgeInsets.fromLTRB(15, 5, 15, 20),
       shape: RoundedRectangleBorder(

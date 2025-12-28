@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import '../../../../core/widgets/app_bar.dart';
 import '../../../../core/widgets/bottom_navigation.dart';
 import '../../guardians/presentation/guardians.dart';
+import '../../setting/presentation/screens/setting.dart';
 import '../../trip/presentation/trip.dart';
-import 'setting/setting.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});

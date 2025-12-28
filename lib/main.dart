@@ -4,7 +4,6 @@ import 'package:safetrek_project/feat/home/presentation/splash/splash_screen.dar
 import 'firebase_options.dart'; // File này được tạo ra sau khi bạn chạy flutterfire configure
 
 void main() async {
-  // Đảm bảo các dịch vụ của Flutter đã sẵn sàng
   WidgetsFlutterBinding.ensureInitialized();
   
   // Khởi tạo Firebase
