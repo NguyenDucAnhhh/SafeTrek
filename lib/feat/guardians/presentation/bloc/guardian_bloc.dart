@@ -20,18 +20,31 @@ class GuardianBloc extends Bloc<GuardianEvent, GuardianState> {
 
     on<AddGuardianEvent>((event, emit) async {
       try {
-        // Lấy ID thật từ Firebase sau khi thêm thành công
-        final String docId = await repository.addGuardian(event.guardian);
+        // 1. Lấy UID của người dùng hiện tại (người gửi lời mời)
+        final String uid = repository.getUserId();
+        
+        // 2. Thêm người bảo vệ và lấy ID của bản ghi đó (ID người bảo vệ)
+        final String guardianDocId = await repository.addGuardian(event.guardian);
         
         emit(const GuardianAddedSuccess("Đã lưu thông tin người bảo vệ!"));
 
-        // TẠO LINK THẬT VỚI ID CHÍNH XÁC
-        final String inviteLink = "https://safetrek-2b5a0.web.app?id=$docId";
+        // 3. TẠO LINK: để tránh trường hợp một số app/ứng dụng tách query string,
+        //    đưa `gid` vào path và thêm `uid` làm query parameter.
+        final String inviteLink = Uri.https(
+          'safetrek-2b5a0.web.app',
+          '/invite/$guardianDocId',
+          {'uid': uid},
+        ).toString();
+        
+        // IN RA ĐỂ KIỂM TRA TRONG TAB RUN CỦA ANDROID STUDIO
+        print("---------------------------------------");
+        print("LINK MỜI: $inviteLink");
+        print("---------------------------------------");
+
         final String inviteMessage = "Tôi muốn thêm bạn làm người bảo vệ trên SafeTrek. Nhấn vào link để xác nhận giúp tôi nhé: $inviteLink";
 
         emit(GuardianInviteReady(message: inviteMessage, phone: event.guardian.phone));
         
-        // Tải lại danh sách
         add(LoadGuardiansEvent());
       } catch (e) {
         emit(GuardianError("Lỗi khi thêm: ${e.toString()}"));
