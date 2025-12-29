@@ -17,7 +17,7 @@ class SettingsRemoteDataSourceImpl implements SettingsRemoteDataSource {
 
   SettingsRemoteDataSourceImpl({required this.firestore, required this.auth});
 
-  final String _testUserId = 'fBMzuk8GwEjeqccc1j54';
+  final String _testUserId = 'q8lguH9oniXKz47UmMXEBRc1URS2';
 
   String get _currentUserId {
     return auth.currentUser?.uid ?? _testUserId;
