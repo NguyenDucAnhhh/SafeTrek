@@ -14,11 +14,17 @@ class LoadUserSettingsEvent extends SettingsEvent {}
 class UpdateProfileEvent extends SettingsEvent {
   final String name;
   final String phone;
+  final String email;
 
-  const UpdateProfileEvent(this.name, this.phone);
+  // Sửa từ (this.name, this.phone, this.email) thành dạng đặt tên dưới đây:
+  const UpdateProfileEvent({
+    required this.name,
+    required this.phone,
+    required this.email,
+  });
 
   @override
-  List<Object?> get props => [name, phone];
+  List<Object?> get props => [name, phone, email];
 }
 
 // ================= SAFE PIN =================
@@ -50,4 +56,15 @@ class ChangePasswordEvent extends SettingsEvent {
 
   @override
   List<Object?> get props => [oldPassword, newPassword];
+
+}
+
+class LoadHiddenPanicEvent extends SettingsEvent {}
+
+class ToggleHiddenPanicEvent extends SettingsEvent {
+  final bool enabled;
+  ToggleHiddenPanicEvent(this.enabled);
+
+  @override
+  List<Object> get props => [enabled];
 }

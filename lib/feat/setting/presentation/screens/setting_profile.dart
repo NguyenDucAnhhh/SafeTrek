@@ -16,24 +16,34 @@ class SettingProfile extends StatefulWidget {
 class _SettingProfileState extends State<SettingProfile> {
   late TextEditingController _nameController;
   late TextEditingController _phoneController;
+  late TextEditingController _emailController;
+
+  bool _isLoading = false;
 
   @override
   void initState() {
     super.initState();
     _nameController = TextEditingController(text: widget.userSetting.name);
     _phoneController = TextEditingController(text: widget.userSetting.phone);
+    _emailController = TextEditingController(text: widget.userSetting.email);
   }
 
   @override
   void dispose() {
     _nameController.dispose();
     _phoneController.dispose();
+    _emailController.dispose();
     super.dispose();
   }
 
   void _saveProfile() {
+    // Gửi dữ liệu đã sửa đổi qua BLoC
     context.read<SettingsBloc>().add(
-      UpdateProfileEvent(_nameController.text, _phoneController.text),
+      UpdateProfileEvent(
+        name: _nameController.text.trim(),
+        phone: _phoneController.text.trim(),
+        email: _emailController.text.trim(),
+      ),
     );
     Navigator.pop(context);
   }
@@ -91,23 +101,68 @@ class _SettingProfileState extends State<SettingProfile> {
                     ),
                     child: Column(
                       children: [
-                        // ... Header
-                        const SizedBox(height: 14),
+                        // --- Profile Header ---
+                        Row(
+                          children: [
+                            Container(
+                              width: 46, height: 46,
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFDBEAFE),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: const Icon(Icons.person_outlined, color: Colors.blue, size: 26),
+                            ),
+                            const SizedBox(width: 12),
+                            const Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('Thông tin cá nhân', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                                Text('Cập nhật thông tin liên hệ', style: TextStyle(fontSize: 13, color: Color(0xFF6A7282))),
+                              ],
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 24),
+
+                        // --- Form Fields ---
                         Form(
                           child: Column(
                             children: [
-                              // ... TextFormFields
-                              const SizedBox(height: 18),
+                              _buildLabel(Icons.person_outline, 'Họ tên'),
+                              const SizedBox(height: 6),
+                              TextFormField(
+                                controller: _nameController,
+                                decoration: _inputDecoration(hint: 'Nhập họ tên'),
+                              ),
+                              const SizedBox(height: 16),
+
+                              _buildLabel(Icons.phone_outlined, 'Số điện thoại'),
+                              const SizedBox(height: 6),
+                              TextFormField(
+                                controller: _phoneController,
+                                keyboardType: TextInputType.phone,
+                                decoration: _inputDecoration(hint: 'Nhập số điện thoại'),
+                              ),
+                              const SizedBox(height: 16),
+
+                              _buildLabel(Icons.email_outlined, 'Email'),
+                              const SizedBox(height: 6),
+                              TextFormField(
+                                controller: _emailController,
+                                keyboardType: TextInputType.emailAddress,
+                                decoration: _inputDecoration(hint: 'Nhập email'),
+                              ),
+
+                              const SizedBox(height: 24),
+
+                              // --- Save Button ---
                               SizedBox(
                                 width: double.infinity,
                                 child: ElevatedButton(
                                   onPressed: _saveProfile,
                                   style: ElevatedButton.styleFrom(
-                                    padding: const EdgeInsets.symmetric(vertical: 14),
+                                    padding: EdgeInsets.zero,
                                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                    elevation: 0,
-                                    backgroundColor: Colors.transparent,
-                                    shadowColor: Colors.transparent,
                                   ),
                                   child: Ink(
                                     decoration: BoxDecoration(
@@ -116,7 +171,7 @@ class _SettingProfileState extends State<SettingProfile> {
                                     ),
                                     child: Container(
                                       alignment: Alignment.center,
-                                      constraints: const BoxConstraints(minHeight: 44),
+                                      constraints: const BoxConstraints(minHeight: 48),
                                       child: const Text(
                                         'Lưu thông tin',
                                         style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.white),
@@ -136,6 +191,19 @@ class _SettingProfileState extends State<SettingProfile> {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildLabel(IconData icon, String title) {
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Row(
+        children: [
+          Icon(icon, size: 16, color: Colors.blue),
+          const SizedBox(width: 8),
+          Text(title, style: const TextStyle(fontSize: 13, color: Color(0xFF4B5563))),
+        ],
       ),
     );
   }

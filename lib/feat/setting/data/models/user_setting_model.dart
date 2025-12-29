@@ -1,31 +1,32 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:safetrek_project/feat/setting/domain/entity/user_setting.dart';
 
 class UserSettingModel extends UserSetting {
   const UserSettingModel({
-    required String name,
-    required String email,
-    required String phone,
-    required String safePIN,
-    required String duressPIN,
-  }) : super(
-          name: name,
-          email: email,
-          phone: phone,
-          safePIN: safePIN,
-          duressPIN: duressPIN,
-        );
+    required super.userId,
+    required super.name,
+    required super.email,
+    required super.phone,
+    required super.safePIN,
+    required super.duressPIN,
+  });
 
-  factory UserSettingModel.fromMap(Map<String, dynamic> map) {
+  /// Tạo từ DocumentSnapshot của Firestore
+  factory UserSettingModel.fromFirestore(DocumentSnapshot doc) {
+    final data = doc.data() as Map<String, dynamic>? ?? {};
+
     return UserSettingModel(
-      name: map['name'] ?? '',
-      email: map['email'] ?? '',
-      phone: map['phone'] ?? '',
-      safePIN: map['safePIN'] ?? '',
-      duressPIN: map['duressPIN'] ?? '',
+      userId: doc.id,
+      name: data['name'] ?? '',
+      email: data['email'] ?? '',
+      phone: data['phone'] ?? '',
+      safePIN: data['safePIN'] ?? '',
+      duressPIN: data['duressPIN'] ?? '',
     );
   }
 
-  Map<String, dynamic> toMap() {
+  /// Chuyển thành Map để lưu Firestore
+  Map<String, dynamic> toFirestore() {
     return {
       'name': name,
       'email': email,
@@ -35,8 +36,10 @@ class UserSettingModel extends UserSetting {
     };
   }
 
+  /// Chuyển từ entity
   factory UserSettingModel.fromEntity(UserSetting entity) {
     return UserSettingModel(
+      userId: entity.userId,
       name: entity.name,
       email: entity.email,
       phone: entity.phone,

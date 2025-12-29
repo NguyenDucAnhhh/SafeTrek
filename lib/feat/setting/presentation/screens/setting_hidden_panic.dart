@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:safetrek_project/core/widgets/secondary_header.dart';
 
-// Enum for activation methods to avoid using raw strings
 enum ActivationMethod { volume, power }
 
 class SettingHiddenPanic extends StatefulWidget {
@@ -12,206 +11,116 @@ class SettingHiddenPanic extends StatefulWidget {
 }
 
 class _SettingHiddenPanicState extends State<SettingHiddenPanic> {
-
-  // --- STATE ---
   bool _isEnabled = false;
   ActivationMethod _selectedMethod = ActivationMethod.volume;
   int _selectedCount = 5;
 
-  // --- BUILD METHOD ---
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF3F5FF),
+      backgroundColor: const Color(0xFFF5F7FF),
       appBar: SecondaryHeader(title: 'Nút hoảng loạn ẩn'),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const SizedBox(height: 8),
-            _buildHeader(),
-            const SizedBox(height: 24),
-            _buildToggleCard(),
-
-            // Conditionally show the rest of the settings
-            if (_isEnabled) ...[
-              const SizedBox(height: 16),
-              _buildInfoCard(),
-              const SizedBox(height: 24),
-              const Text(
-                'Chọn Cách Kích hoạt',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF1F2937),
-                ),
-              ),
-              const SizedBox(height: 16),
-              _buildActivationOption(
-                icon: Icons.volume_up,
-                title: 'Phím Âm lượng',
-                subtitle: 'Nhấn phím tăng/giảm âm lượng trong 2 giây',
-                value: ActivationMethod.volume,
-              ),
-              const SizedBox(height: 16),
-              _buildActivationOption(
-                icon: Icons.power_settings_new,
-                title: 'Nút Power',
-                subtitle: 'Nhấn nút Power trong 2 giây',
-                value: ActivationMethod.power,
-              ),
-              const SizedBox(height: 24),
-              _buildImportantNoteCard(),
-            ],
-            const SizedBox(height: 20), // Spacer for bottom button
-          ],
-        ),
-      ),
-    );
-  }
-  Widget _buildHeader() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 12,
-            offset: const Offset(0, 6),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      body: ListView(
+        padding: const EdgeInsets.all(16),
         children: [
-          Row(
-            children: [
-              Container(
-                width: 46,
-                height: 46,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFFE8E8),
-                  borderRadius: BorderRadius.circular(12),
+          _headerCard(),
+          const SizedBox(height: 16),
+          _toggleCard(),
+          if (_isEnabled) ...[
+            const SizedBox(height: 16),
+            _infoCard(),
+            const SizedBox(height: 24),
+            _sectionTitle('Cách kích hoạt'),
+            const SizedBox(height: 12),
+            _activationCard(
+              icon: Icons.volume_up_rounded,
+              title: 'Phím âm lượng',
+              subtitle: 'Nhấn tăng/giảm âm lượng liên tục',
+              value: ActivationMethod.volume,
+            ),
+            const SizedBox(height: 12),
+            _activationCard(
+              icon: Icons.power_settings_new_rounded,
+              title: 'Nút nguồn (Power)',
+              subtitle: 'Nhấn nút Power liên tục',
+              value: ActivationMethod.power,
+            ),
+            const SizedBox(height: 20),
+            _warningCard(),
+          ],
+        ],
+      ),
+    );
+  }
+
+  // ================= UI COMPONENTS =================
+
+  Widget _headerCard() {
+    return _card(
+      child: Row(
+        children: [
+          _iconBox(Icons.flash_on_rounded, Colors.red.shade100, Colors.red),
+          const SizedBox(width: 12),
+          const Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Nút hoảng loạn ẩn',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                SizedBox(height: 4),
+                Text(
+                  'Kích hoạt cảnh báo bí mật trong tình huống nguy hiểm',
+                  style: TextStyle(fontSize: 13, color: Colors.grey),
                 ),
-                child: const Icon(
-                  Icons.flash_on_outlined,
-                  color: Color(0xFFF53E3E),
-                  size: 26,
-                ),
-              ),
-              const SizedBox(width: 12),
-              const Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Nút Hoảng Loạn Ẩn',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFF111827),
-                      ),
-                    ),
-                    SizedBox(height: 4),
-                    Text(
-                      'Kích hoạt cảnh báo bí mật',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: Color(0xFF6A7282),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildToggleCard() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [BoxShadow(color: Colors.grey.withOpacity(0.05), blurRadius: 10)],
-      ),
+  Widget _toggleCard() {
+    return _card(
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           const Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'Bật Nút Hoảng loạn Ẩn',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF101828),
-                  ),
-                ),
+                Text('Bật tính năng',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
                 SizedBox(height: 4),
                 Text(
-                  'Kích hoạt cảnh báo khẩn cấp mà không cần mở ứng dụng',
-                  style: TextStyle(fontSize: 14, color: Color(0xFF6A7282)),
+                  'Kích hoạt nhanh mà không cần mở ứng dụng',
+                  style: TextStyle(fontSize: 13, color: Colors.grey),
                 ),
               ],
             ),
           ),
-          const SizedBox(width: 16),
-          Switch(
+          Switch.adaptive(
             value: _isEnabled,
-            onChanged: (value) {
-              setState(() {
-                _isEnabled = value;
-              });
-            },
-            activeTrackColor: const Color(0xFF6366F1),
-            activeColor: Colors.white,
-            inactiveTrackColor: Colors.grey.shade300,
-            inactiveThumbColor: Colors.white,
+            onChanged: (v) => setState(() => _isEnabled = v),
+            activeColor: const Color(0xFF4F46E5),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildInfoCard() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: const Color(0xFFEEF2FF),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: const Row(
+  Widget _infoCard() {
+    return _card(
+      color: const Color(0xFFEEF2FF),
+      child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+        children: const [
           Icon(Icons.info_outline, color: Color(0xFF4F46E5)),
           SizedBox(width: 12),
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Nút hoảng loạn ẩn là gì?',
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF3730A3),
-                  ),
-                ),
-                SizedBox(height: 6),
-                Text(
-                  'Cho phép bạn kích hoạt cảnh báo khẩn cấp một cách bí mật thông qua các thao tác đặc biệt, rất hữu ích khi bạn không thể mở ứng dụng một cách rõ ràng.',
-                  style: TextStyle(fontSize: 14, color: Color(0xFF4338CA), height: 1.4),
-                ),
-              ],
+            child: Text(
+              'Tính năng này cho phép gửi cảnh báo khẩn cấp '
+                  'một cách kín đáo khi bạn không thể mở ứng dụng.',
+              style: TextStyle(height: 1.4, color: Color(0xFF3730A3)),
             ),
           ),
         ],
@@ -219,81 +128,61 @@ class _SettingHiddenPanicState extends State<SettingHiddenPanic> {
     );
   }
 
-  Widget _buildActivationOption({
+  Widget _activationCard({
     required IconData icon,
     required String title,
     required String subtitle,
     required ActivationMethod value,
   }) {
-    final bool isSelected = _selectedMethod == value;
+    final selected = _selectedMethod == value;
+
     return GestureDetector(
-      onTap: () {
-        setState(() {
-          _selectedMethod = value;
-        });
-      },
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: isSelected ? Border.all(color: const Color(0xFF4F46E5), width: 1.5) : null,
-          boxShadow: [BoxShadow(color: Colors.grey.withOpacity(0.05), blurRadius: 10)],
-        ),
+      onTap: () => setState(() => _selectedMethod = value),
+      child: _card(
+        border: selected
+            ? Border.all(color: const Color(0xFF4F46E5), width: 1.5)
+            : null,
         child: Column(
           children: [
             Row(
               children: [
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFEEF2FF),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Icon(icon, color: const Color(0xFF4F46E5), size: 24),
-                ),
+                _iconBox(icon, const Color(0xFFEEF2FF),
+                    const Color(0xFF4F46E5)),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF101828))),
+                      Text(title,
+                          style: const TextStyle(
+                              fontSize: 15, fontWeight: FontWeight.w600)),
                       const SizedBox(height: 4),
-                      Text(subtitle, style: const TextStyle(fontSize: 14, color: Color(0xFF6A7282))),
+                      Text(subtitle,
+                          style: const TextStyle(
+                              fontSize: 13, color: Colors.grey)),
                     ],
                   ),
                 ),
-                Radio<ActivationMethod>(
+                Radio(
                   value: value,
                   groupValue: _selectedMethod,
-                  onChanged: (ActivationMethod? newValue) {
-                    setState(() {
-                      if (newValue != null) _selectedMethod = newValue;
-                    });
-                  },
+                  onChanged: (_) =>
+                      setState(() => _selectedMethod = value),
                   activeColor: const Color(0xFF4F46E5),
                 ),
               ],
             ),
-            if (isSelected) ...[
-              const SizedBox(height: 16),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 4.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text('Số lần nhấn:', style: TextStyle(fontSize: 15, color: Color(0xFF374151))),
-                    Row(
-                      children: [
-                        _buildCountButton(3),
-                        const SizedBox(width: 8),
-                        _buildCountButton(5),
-                        const SizedBox(width: 8),
-                        _buildCountButton(7),
-                      ],
-                    ),
-                  ],
-                ),
+            if (selected) ...[
+              const Divider(height: 24),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text('Số lần nhấn',
+                      style: TextStyle(fontWeight: FontWeight.w500)),
+                  Row(
+                    children: [3, 5, 7].map(_countButton).toList(),
+                  ),
+                ],
               ),
             ]
           ],
@@ -302,62 +191,76 @@ class _SettingHiddenPanicState extends State<SettingHiddenPanic> {
     );
   }
 
-  Widget _buildCountButton(int count) {
-    final bool isSelected = _selectedCount == count;
-    return ElevatedButton(
-      onPressed: () {
-        setState(() {
-          _selectedCount = count;
-        });
-      },
-      style: ElevatedButton.styleFrom(
-        backgroundColor: isSelected ? const Color(0xFF4F46E5) : const Color(0xFFF3F4F6),
-        foregroundColor: isSelected ? Colors.white : const Color(0xFF374151),
-        elevation: 0,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+  Widget _countButton(int count) {
+    final selected = _selectedCount == count;
+    return Padding(
+      padding: const EdgeInsets.only(left: 8),
+      child: OutlinedButton(
+        onPressed: () => setState(() => _selectedCount = count),
+        style: OutlinedButton.styleFrom(
+          backgroundColor:
+          selected ? const Color(0xFF4F46E5) : Colors.white,
+          foregroundColor:
+          selected ? Colors.white : Colors.grey.shade800,
+          side: BorderSide(
+              color: selected
+                  ? const Color(0xFF4F46E5)
+                  : Colors.grey.shade300),
+        ),
+        child: Text('$count x'),
       ),
-      child: Text('${count}x', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
     );
   }
 
-  Widget _buildImportantNoteCard() {
+  Widget _warningCard() {
+    return _card(
+      color: const Color(0xFFFFFBEB),
+      border: Border.all(color: Colors.amber.shade300),
+      child: const Text(
+        '⚠️ Cảnh báo được gửi ngay lập tức khi kích hoạt.\n'
+            'Hãy cẩn thận tránh thao tác nhầm.',
+        style: TextStyle(height: 1.5),
+      ),
+    );
+  }
+
+  // ================= HELPERS =================
+
+  Widget _sectionTitle(String text) => Text(
+    text,
+    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+  );
+
+  Widget _card({
+    required Widget child,
+    Color color = Colors.white,
+    Border? border,
+  }) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFFFEFCE8),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFFDE047).withOpacity(0.8)),
-      ),
-      child: const Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: EdgeInsets.only(top: 2.0),
-            child: Icon(Icons.info_outline, color: Color(0xFFB45309), size: 20),
-          ),
-          SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Lưu ý quan trọng:',
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black,
-                  ),
-                ),
-                SizedBox(height: 8),
-                Text('• Cảnh báo sẽ được gửi ngay lập tức khi kích hoạt', style: TextStyle(fontSize: 14, color: Colors.black, height: 1.5)),
-                Text('• Không có xác nhận, hãy cẩn thận tránh kích hoạt nhầm', style: TextStyle(fontSize: 14, color: Colors.black, height: 1.5)),
-                Text('• Hoạt động ngay cả khi ứng dụng đang chạy nền', style: TextStyle(fontSize: 14, color: Colors.black, height: 1.5)),
-              ],
-            ),
+        color: color,
+        borderRadius: BorderRadius.circular(16),
+        border: border,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 6),
           ),
         ],
       ),
+      child: child,
+    );
+  }
+
+  Widget _iconBox(IconData icon, Color bg, Color color) {
+    return Container(
+      width: 44,
+      height: 44,
+      decoration:
+      BoxDecoration(color: bg, borderRadius: BorderRadius.circular(12)),
+      child: Icon(icon, color: color),
     );
   }
 }

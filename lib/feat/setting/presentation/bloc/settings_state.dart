@@ -13,9 +13,10 @@ class SettingsInitial extends SettingsState {}
 class SettingsLoading extends SettingsState {}
 
 class SettingsLoaded extends SettingsState {
+
   final UserSetting userSetting;
 
-  const SettingsLoaded(this.userSetting);
+  const SettingsLoaded({required this.userSetting});
 
   @override
   List<Object?> get props => [userSetting];
@@ -37,4 +38,12 @@ class SettingsError extends SettingsState {
 
   @override
   List<Object?> get props => [message];
+}
+
+class HiddenPanicLoaded extends SettingsState {
+  final bool enabled;
+  const HiddenPanicLoaded(this.enabled);
+
+  @override
+  List<Object> get props => [enabled];
 }

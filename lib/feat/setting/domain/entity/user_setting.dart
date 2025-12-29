@@ -1,6 +1,7 @@
 import 'package:equatable/equatable.dart';
 
 class UserSetting extends Equatable {
+  final String userId;
   final String name;
   final String email;
   final String phone;
@@ -8,6 +9,7 @@ class UserSetting extends Equatable {
   final String duressPIN;
 
   const UserSetting({
+    required this.userId,
     required this.name,
     required this.email,
     required this.phone,
@@ -16,6 +18,7 @@ class UserSetting extends Equatable {
   });
 
   UserSetting copyWith({
+    String? userId,
     String? name,
     String? email,
     String? phone,
@@ -23,6 +26,7 @@ class UserSetting extends Equatable {
     String? duressPIN,
   }) {
     return UserSetting(
+      userId: userId ?? this.userId,
       name: name ?? this.name,
       email: email ?? this.email,
       phone: phone ?? this.phone,
@@ -32,5 +36,5 @@ class UserSetting extends Equatable {
   }
 
   @override
-  List<Object?> get props => [name, email, phone, safePIN, duressPIN];
+  List<Object?> get props => [userId, name, email, phone, safePIN, duressPIN];
 }

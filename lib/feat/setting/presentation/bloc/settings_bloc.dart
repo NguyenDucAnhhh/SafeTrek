@@ -12,6 +12,16 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
     on<ChangeSafePinEvent>(_changeSafePin);
     on<ChangeDuressPinEvent>(_changeDuressPin);
     on<ChangePasswordEvent>(_changePassword);
+    on<LoadHiddenPanicEvent>((event, emit) async {
+      final enabled = await repository.getHiddenPanic();
+      emit(HiddenPanicLoaded(enabled));
+    });
+
+    on<ToggleHiddenPanicEvent>((event, emit) async {
+      await repository.setHiddenPanic(event.enabled);
+      emit(HiddenPanicLoaded(event.enabled));
+    });
+
   }
 
   Future<void> _loadUserSettings(
@@ -19,7 +29,7 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
     emit(SettingsLoading());
     try {
       final userSetting = await repository.getUserSettings();
-      emit(SettingsLoaded(userSetting));
+      emit(SettingsLoaded(userSetting: userSetting));
     } catch (e) {
       emit(SettingsError("Không thể tải dữ liệu: ${e.toString()}"));
     }
@@ -27,13 +37,23 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
 
   Future<void> _updateProfile(UpdateProfileEvent e, Emitter<SettingsState> emit) async {
     try {
-      await repository.updateProfile(e.name, e.phone);
-      emit(const SettingsSuccess('Cập nhật hồ sơ thành công'));
-      add(LoadUserSettingsEvent()); // Tải lại dữ liệu
+      // 1. Cập nhật lên Firebase
+      await repository.updateProfile(e.name, e.phone, e.email);
+
+      // 2. Lấy dữ liệu mới nhất ngay lập tức
+      final updatedUser = await repository.getUserSettings();
+
+      // 3. Phát ra trạng thái thành công kèm dữ liệu mới
+      // Giả sử bạn muốn hiện thông báo, hãy emit Success trước rồi Loaded sau,
+      // hoặc chỉ cần emit Loaded là đủ để UI update tên mới.
+      emit(SettingsLoaded(userSetting: updatedUser));
+
+      print("Cập nhật hồ sơ thành công!");
     } catch (e) {
       emit(SettingsError("Lỗi khi cập nhật hồ sơ: $e"));
     }
   }
+
 
   Future<void> _changeSafePin(ChangeSafePinEvent e, Emitter<SettingsState> emit) async {
     try {
