@@ -1,8 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:safetrek_project/feat/trip/presentation/trip_monitoring.dart';
 import 'package:safetrek_project/core/widgets/app_bar.dart';
 import 'package:safetrek_project/core/widgets/bottom_navigation.dart';
 import 'package:safetrek_project/core/widgets/secondary_header.dart';
+import 'package:safetrek_project/feat/trip/data/data_source/trip_remote_data_source.dart';
+import 'package:safetrek_project/feat/trip/data/repository/trip_repository_impl.dart';
+import 'package:safetrek_project/feat/trip/domain/entity/trip.dart';
+import 'package:safetrek_project/feat/trip/presentation/bloc/trip_bloc.dart';
+import 'package:safetrek_project/feat/trip/presentation/bloc/trip_event.dart';
+import 'package:safetrek_project/feat/trip/presentation/bloc/trip_state.dart';
+import 'package:safetrek_project/feat/trip/data/services/location_service.dart';
 
 class StartTrip extends StatefulWidget {
   const StartTrip({super.key});
@@ -16,6 +26,8 @@ class _StartTripState extends State<StartTrip> {
   final TextEditingController _destinationController = TextEditingController();
   final TextEditingController _timeController = TextEditingController(text: '15');
   int? _selectedTime;
+  late TripBloc _tripBloc;
+  bool _hasActiveTip = false;
 
   void _onItemTapped(int index) {
     setState(() {
@@ -27,20 +39,73 @@ class _StartTripState extends State<StartTrip> {
   void initState() {
     super.initState();
     _selectedTime = 15;
+    _tripBloc = TripBloc(
+      TripRepositoryImpl(
+        TripRemoteDataSource(FirebaseFirestore.instance),
+      ),
+    );
+    _checkActiveTrip();
+  }
+
+  Future<void> _checkActiveTrip() async {
+    try {
+      final uid = FirebaseAuth.instance.currentUser?.uid;
+      if (uid == null) return;
+
+      final snapshot = await FirebaseFirestore.instance
+          .collection('trips')
+          .where('userId', isEqualTo: uid)
+          .where('status', isEqualTo: 'Đang tiến hành')
+          .get();
+
+      if (mounted) {
+        setState(() {
+          _hasActiveTip = snapshot.docs.isNotEmpty;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error checking active trip: $e');
+    }
   }
 
   @override
   void dispose() {
     _destinationController.dispose();
     _timeController.dispose();
+    _tripBloc.close();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: const SecondaryHeader(title: 'Chọn chuyến đi'),
-      body: Container(
+    return BlocListener<TripBloc, TripState>(
+      bloc: _tripBloc,
+      listener: (context, state) {
+        if (state is TripAddedSuccess) {
+          // Trip saved to Firestore, navigate to monitoring
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(state.message)),
+          );
+          final duration = int.tryParse(_timeController.text) ?? 15;
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) =>
+                  TripMonitoring(durationInMinutes: duration),
+            ),
+          );
+        } else if (state is TripError) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(state.message),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      },
+      child: Scaffold(
+        appBar: const SecondaryHeader(title: 'Chọn chuyến đi'),
+        body: Container(
         height: double.infinity,
         width: double.infinity,
         decoration: const BoxDecoration(
@@ -60,6 +125,43 @@ class _StartTripState extends State<StartTrip> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
+                    if (_hasActiveTip)
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        margin: const EdgeInsets.only(bottom: 16),
+                        decoration: BoxDecoration(
+                          color: Colors.orange.shade100,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.orange.shade300),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(Icons.warning_amber_rounded,
+                                color: Colors.orange.shade700, size: 24),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    'Đang có chuyến đi hoạt động',
+                                    style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        color: Color(0xFFB8860B)),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  const Text(
+                                    'Vui lòng hoàn thành hoặc hủy chuyến đi hiện tại',
+                                    style: TextStyle(
+                                        fontSize: 12,
+                                        color: Color(0xFF8B6914)),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     _buildDestinationCard(),
                     const SizedBox(height: 20),
                     _buildTimeCard(),
@@ -67,16 +169,24 @@ class _StartTripState extends State<StartTrip> {
                     _buildInfoCard(),
                     const SizedBox(height: 32),
                     ElevatedButton(
-                      onPressed: () {
-                        final duration = int.tryParse(_timeController.text) ?? 15;
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) =>
-                                TripMonitoring(durationInMinutes: duration),
-                          ),
-                        );
-                      },
+                      onPressed: _hasActiveTip
+                          ? null
+                          : () async {
+                              final destination = _destinationController.text.isNotEmpty
+                                  ? _destinationController.text
+                                  : 'Chuyến đi';
+                              
+                              // Lấy vị trí hiện tại
+                              final location = await LocationService.getCurrentLocation();
+                              
+                              final trip = Trip(
+                                name: destination,
+                                startedAt: DateTime.now(),
+                                status: 'Đang tiến hành',
+                                lastLocation: location,
+                              );
+                              _tripBloc.add(AddTripEvent(trip));
+                            },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF8A76F3),
                         padding: const EdgeInsets.symmetric(vertical: 16),
@@ -100,6 +210,7 @@ class _StartTripState extends State<StartTrip> {
           ),
         ),
       ),
+    )
     );
   }
 
@@ -152,7 +263,14 @@ class _StartTripState extends State<StartTrip> {
                 ),
                 const SizedBox(width: 10),
                 ElevatedButton.icon(
-                  onPressed: () {},
+                  onPressed: () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Tính năng này đang phát triển'),
+                        duration: Duration(seconds: 2),
+                      ),
+                    );
+                  },
                   icon: const Icon(Icons.map_outlined, color: Colors.white),
                   label: const Text('Bản đồ',
                       style: TextStyle(

@@ -1,8 +1,12 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:safetrek_project/core/widgets/app_bar.dart';
 import 'package:safetrek_project/core/widgets/emergency_button.dart';
 import 'package:safetrek_project/core/widgets/pin_input_dialog.dart';
+import 'package:safetrek_project/feat/home/presentation/main_screen.dart';
+import 'package:safetrek_project/feat/trip/data/services/location_service.dart';
 
 class TripMonitoring extends StatefulWidget {
   final int durationInMinutes;
@@ -60,7 +64,7 @@ class _TripMonitoringState extends State<TripMonitoring> {
   }
 
   void _showPinDialog() async {
-    final result = await showDialog(
+    final enteredPin = await showDialog<String>(
       context: context,
       barrierDismissible: false, // User must enter PIN
       builder: (BuildContext context) {
@@ -68,9 +72,107 @@ class _TripMonitoringState extends State<TripMonitoring> {
       },
     );
 
-    if (result == true && mounted) {
-      _timer.cancel();
-      Navigator.pop(context); // Go back to the previous screen
+    if (enteredPin != null && mounted) {
+      // Validate PIN against Firestore
+      try {
+        final uid = FirebaseAuth.instance.currentUser?.uid;
+        if (uid == null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Lỗi: Người dùng chưa đăng nhập'),
+              backgroundColor: Colors.red,
+            ),
+          );
+          return;
+        }
+
+        final userDoc = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(uid)
+            .get();
+
+        final safePIN = userDoc.data()?['safePIN'] as String?;
+        final duressPIN = userDoc.data()?['duressPIN'] as String?;
+        String? tripStatus;
+        String messageText = '';
+        Color messageColor = Colors.red;
+
+        if (enteredPin == safePIN) {
+          // Safe PIN - mark as safe
+          tripStatus = 'Đã đến nơi an toàn';
+          messageText = 'Đã xác nhận đến nơi an toàn!';
+          messageColor = Colors.green;
+        } else if (enteredPin == duressPIN) {
+          // Duress PIN - mark as danger but still end trip
+          tripStatus = 'Nguy hiểm';
+          messageText = 'Đã xác nhận đến nơi an toàn!';
+          messageColor = Colors.green;
+        } else {
+          // PIN incorrect
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Mã PIN không chính xác'),
+              backgroundColor: Colors.red,
+            ),
+          );
+          return;
+        }
+
+        // Update trip status in Firestore
+        // Get the most recent active trip without needing complex index
+        final tripsSnapshot = await FirebaseFirestore.instance
+            .collection('trips')
+            .where('userId', isEqualTo: uid)
+            .where('status', isEqualTo: 'Đang tiến hành')
+            .get();
+
+        if (tripsSnapshot.docs.isNotEmpty) {
+          // Sort by startedAt locally and get the most recent
+          final sortedDocs = tripsSnapshot.docs.toList();
+          sortedDocs.sort((a, b) {
+            final dateA = (a.data()['startedAt'] as Timestamp?)?.toDate() ?? DateTime(2000);
+            final dateB = (b.data()['startedAt'] as Timestamp?)?.toDate() ?? DateTime(2000);
+            return dateB.compareTo(dateA); // descending order
+          });
+
+          final tripId = sortedDocs.first.id;
+          
+          // Lấy vị trí cuối cùng trước khi cập nhật
+          final lastLocation = await LocationService.getCurrentLocation();
+          
+          await FirebaseFirestore.instance
+              .collection('trips')
+              .doc(tripId)
+              .update({
+                'status': tripStatus,
+                'lastLocation': lastLocation,
+              });
+        }
+
+        _timer.cancel();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(messageText),
+            backgroundColor: messageColor,
+          ),
+        );
+        Future.delayed(const Duration(seconds: 1), () {
+          if (mounted) {
+            Navigator.pushAndRemoveUntil(
+              context,
+              MaterialPageRoute(builder: (context) => const MainScreen()),
+              (route) => false, // Remove all previous routes
+            );
+          }
+        });
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Lỗi: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
