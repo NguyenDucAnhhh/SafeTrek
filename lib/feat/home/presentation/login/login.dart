@@ -1,9 +1,11 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:safetrek_project/feat/auth/presentation/cubit/auth_cubit.dart';
 import 'package:safetrek_project/feat/auth/presentation/cubit/auth_state.dart';
 import '../register/register_screen.dart';
 import '../../../../core/widgets/app_bar.dart';
+import '../main_screen.dart'; // Đảm bảo import MainScreen
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -48,7 +50,13 @@ class _LoginScreenState extends State<LoginScreen> {
                     ..hideCurrentSnackBar()
                     ..showSnackBar(SnackBar(content: Text(state.message)));
                 }
-                // Authenticated state is handled by the AuthWrapper, no need to navigate here
+                
+                // FIX TẠI ĐÂY: Khi đã xác thực thành công, phải chủ động chuyển màn hình
+                if (state is Authenticated) {
+                  Navigator.of(context).pushReplacement(
+                    MaterialPageRoute(builder: (context) => const MainScreen()),
+                  );
+                }
               },
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -200,19 +208,15 @@ class _LoginScreenState extends State<LoginScreen> {
                             builder: (context) => const RegisterScreen(),
                           ));
                         },
-                        style: ButtonStyle(
-                          shape: MaterialStateProperty.all(
-                              RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8.0),
-                              )
+                        style: OutlinedButton.styleFrom(
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8.0),
                           ),
-                          side: MaterialStateProperty.all(
-                              const BorderSide(
-                                color: Colors.blue, // Màu của viền
-                                width: 1.5,           // Độ dày của viền
-                              )
+                          side: const BorderSide(
+                            color: Colors.blue,
+                            width: 1.5,
                           ),
-                          backgroundColor: MaterialStateProperty.all(Colors.white),
+                          backgroundColor: Colors.white,
                         ),
                         child: const Text(
                           'Tạo tài khoản mới',

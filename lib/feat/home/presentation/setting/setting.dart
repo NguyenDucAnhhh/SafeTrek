@@ -1,15 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:safetrek_project/core/widgets/app_bar.dart';
 import 'package:safetrek_project/core/widgets/bottom_navigation.dart';
 import 'package:safetrek_project/core/widgets/setting_card.dart';
 import 'package:safetrek_project/core/widgets/action_card.dart';
 import 'package:safetrek_project/core/widgets/show_success_snack_bar.dart';
+import 'package:safetrek_project/feat/auth/presentation/cubit/auth_cubit.dart';
 import 'setting_profile.dart';
 import 'setting_password.dart';
 import 'setting_safePIN.dart';
 import 'setting_duressPIN.dart';
 import 'setting_hidden_panic.dart';
 import '../login/login.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class Setting extends StatefulWidget {
   const Setting({super.key});
@@ -83,7 +86,12 @@ class _SettingState extends State<Setting> {
 
     if (confirm != true || !mounted) return;
 
-    // Điều hướng về màn Login (xoá toàn bộ stack)
+    // 1. GỌI LỆNH ĐĂNG XUẤT THẬT SỰ TỪ CUBIT ĐỂ XÓA TOKEN
+    print("User hiện tại: ${FirebaseAuth.instance.currentUser}");
+    await context.read<AuthCubit>().signOut();
+
+
+    // 2. Điều hướng về màn Login (xoá toàn bộ stack)
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute(builder: (_) => const LoginScreen()),
       (route) => false,
