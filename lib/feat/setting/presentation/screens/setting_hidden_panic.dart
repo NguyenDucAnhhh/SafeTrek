@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:volume_watcher/volume_watcher.dart';
+// import 'package:volume_watcher/volume_watcher.dart';
 import 'package:safetrek_project/core/widgets/secondary_header.dart';
 
 import '../../../../core/widgets/emergency_dialog.dart';
@@ -81,8 +81,8 @@ class _SettingHiddenPanicState extends State<SettingHiddenPanic> {
   void _startListening() async {
     if (_isListening) return;
 
-    _lastVolume = await VolumeWatcher.getCurrentVolume;
-    _volumeListenerId = VolumeWatcher.addListener(_onVolumeChanged);
+    // _lastVolume = await VolumeWatcher.getCurrentVolume;
+    // _volumeListenerId = VolumeWatcher.addListener(_onVolumeChanged);
 
     _isListening = true;
   }
@@ -91,7 +91,7 @@ class _SettingHiddenPanicState extends State<SettingHiddenPanic> {
     if (!_isListening) return;
 
     if (_volumeListenerId != null) {
-      VolumeWatcher.removeListener(_volumeListenerId);
+      // VolumeWatcher.removeListener(_volumeListenerId);
       _volumeListenerId = null;
     }
 

@@ -150,7 +150,7 @@ class _SettingPasswordState extends State<SettingPassword> {
                             style: ElevatedButton.styleFrom(
                               padding: const EdgeInsets.symmetric(vertical: 14),
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                              backgroundColor: const Color(0xFF2F80ED), // Màu xanh Password
+                              backgroundColor: const Color(0xFF2F80ED),
                             ),
                             child: _isLoading
                                 ? const SizedBox(height: 20, width: 20,

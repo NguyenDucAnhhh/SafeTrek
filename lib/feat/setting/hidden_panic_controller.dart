@@ -1,4 +1,4 @@
-import 'package:volume_watcher/volume_watcher.dart';
+// import 'package:volume_watcher/volume_watcher.dart';
 
 class HiddenPanicController {
   final int requiredPressCount;
@@ -19,7 +19,7 @@ class HiddenPanicController {
     if (_isListening) return;
     _isListening = true;
 
-    _listenerId = VolumeWatcher.addListener(_onVolumeChanged);
+    // _listenerId = VolumeWatcher.addListener(_onVolumeChanged);
   }
 
   void stop() {
@@ -27,7 +27,7 @@ class HiddenPanicController {
     _isListening = false;
 
     if (_listenerId != null) {
-      VolumeWatcher.removeListener(_listenerId);
+      // VolumeWatcher.removeListener(_listenerId);
       _listenerId = null;
     }
 

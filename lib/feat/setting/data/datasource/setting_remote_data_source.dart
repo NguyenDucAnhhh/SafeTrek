@@ -129,6 +129,9 @@ class SettingsRemoteDataSourceImpl implements SettingsRemoteDataSource {
       // 3. Cập nhật mật khẩu mới
       await user.updatePassword(newPassword);
 
+      //  4. SIGN OUT để ổn định auth state
+      await auth.signOut();
+
       print("Firebase Authen: Đổi mật khẩu thành công!");
     } on FirebaseAuthException catch (e) {
       if (e.code == 'wrong-password') {
