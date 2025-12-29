@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:safetrek_project/feat/guardians/data/data_source/guardian_remote_data_source.dart';
 import 'package:safetrek_project/feat/guardians/data/model/guardian_model.dart';
 import 'package:safetrek_project/feat/guardians/domain/entity/Guardian.dart';
@@ -8,11 +9,16 @@ class GuardianRepositoryImpl implements GuardianRepository {
 
   GuardianRepositoryImpl(this.remoteDataSource);
 
-  final String _currentUserId = 'fBMzuk8GwEjeqccc1j54';
+  String _getUidOrThrow() {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) throw Exception('Người dùng chưa đăng nhập');
+    return uid;
+  }
 
   @override
   Future<List<Guardian>> getGuardians() async {
-    return await remoteDataSource.getGuardians(_currentUserId);
+    final uid = _getUidOrThrow();
+    return await remoteDataSource.getGuardians(uid);
   }
 
   @override
@@ -23,8 +29,8 @@ class GuardianRepositoryImpl implements GuardianRepository {
       email: guardian.email,
       status: 'Pending',
     );
-    // TRẢ VỀ ID THẬT TỪ FIRESTORE
-    return await remoteDataSource.addGuardian(_currentUserId, model);
+    final uid = _getUidOrThrow();
+    return await remoteDataSource.addGuardian(uid, model);
   }
 
   @override

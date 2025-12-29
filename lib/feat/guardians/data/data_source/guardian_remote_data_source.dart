@@ -11,28 +11,40 @@ class GuardianRemoteDataSource {
     // Tạo Reference đến user để lọc (vì trong ảnh userID là kiểu Reference)
     final userRef = firestore.collection('users').doc(userId);
 
-    final snapshot = await firestore
-        .collection('guardians') // Truy cập thẳng vào collection 'guardians' ở gốc
-        .where('userID', isEqualTo: userRef) // Lọc những người bảo vệ của user này
+    // Thử query trường 'userID' dưới dạng DocumentReference trước
+    final snapshotRef = await firestore
+        .collection('guardians')
+        .where('userID', isEqualTo: userRef)
         .get();
 
-    return snapshot.docs
+    if (snapshotRef.docs.isNotEmpty) {
+      return snapshotRef.docs
+          .map((doc) => GuardianModel.fromFirestore(doc))
+          .toList();
+    }
+
+    // Nếu không có kết quả, thử query bằng chuỗi uid (nếu dữ liệu được lưu dưới dạng String)
+    final snapshotString = await firestore
+        .collection('guardians')
+        .where('userID', isEqualTo: userId)
+        .get();
+
+    return snapshotString.docs
         .map((doc) => GuardianModel.fromFirestore(doc))
         .toList();
   }
 
   // Thêm người bảo vệ mới vào Collection 'guardians' ở gốc và trả về ID
-  Future<String> addGuardian(String userId, GuardianModel guardian) async {
+  Future<String> addGuardian(String userId, GuardianModel guardian, {bool storeAsReference = true}) async {
     final userRef = firestore.collection('users').doc(userId);
-    
-    // Tạo dữ liệu để lưu, đảm bảo userID là một Reference
-    final data = guardian.toFirestore();
-    data['userID'] = userRef;
 
-    final docRef = await firestore
-        .collection('guardians')
-        .add(data);
-        
+    // Tạo dữ liệu để lưu
+    final data = guardian.toFirestore();
+
+    // Nếu muốn, lưu `userID` dưới dạng DocumentReference, ngược lại lưu chuỗi uid
+    data['userID'] = storeAsReference ? userRef : userId;
+
+    final docRef = await firestore.collection('guardians').add(data);
     return docRef.id;
   }
 
