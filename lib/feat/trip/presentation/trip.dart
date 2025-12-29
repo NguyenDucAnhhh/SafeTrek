@@ -1,10 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:safetrek_project/feat/trip/presentation/start_trip.dart';
 import 'package:safetrek_project/feat/trip/presentation/trip_history.dart';
 import 'package:safetrek_project/core/widgets/action_card.dart';
 import 'package:safetrek_project/core/widgets/app_bar.dart';
 import 'package:safetrek_project/core/widgets/bottom_navigation.dart';
 import 'package:safetrek_project/core/widgets/emergency_button.dart';
+import 'package:safetrek_project/feat/trip/data/data_source/trip_remote_data_source.dart';
+import 'package:safetrek_project/feat/trip/data/repository/trip_repository_impl.dart';
+import 'package:safetrek_project/feat/trip/presentation/bloc/trip_bloc.dart';
+import 'package:safetrek_project/feat/trip/presentation/bloc/trip_event.dart';
 
 class Trip extends StatefulWidget {
   const Trip({super.key});
@@ -58,7 +64,7 @@ class _TripState extends State<Trip> {
                 iconColor: Colors.blue,
                 iconBgColor: Colors.blue.shade50,
                 title: "Lịch sử Chuyến đi",
-                subtitle: "0 chuyến đi",
+                subtitle: "Xem tất cả chuyến đi",
                 onTap: () {
                   Navigator.push(
                     context,

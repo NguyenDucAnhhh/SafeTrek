@@ -113,7 +113,16 @@ class _PinInputDialogState extends State<PinInputDialog> {
               Expanded(
                 child: ElevatedButton(
                   onPressed: () {
-                    Navigator.of(context).pop(true);
+                    if (_pinController.text.length == 4) {
+                      Navigator.of(context).pop(_pinController.text);
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Vui lòng nhập đủ 4 chữ số'),
+                          duration: Duration(seconds: 2),
+                        ),
+                      );
+                    }
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF3C8BFF),
