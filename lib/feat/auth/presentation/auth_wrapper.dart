@@ -1,31 +1,31 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:safetrek_project/feat/auth/presentation/cubit/auth_cubit.dart';
-import 'package:safetrek_project/feat/auth/presentation/cubit/auth_state.dart';
-import 'package:safetrek_project/feat/home/presentation/login/login.dart';
-import 'package:safetrek_project/feat/home/presentation/main_screen.dart';
+import 'bloc/auth_bloc.dart';
+import 'bloc/auth_state.dart';
+import '../../home/presentation/login/login.dart';
+import '../../home/presentation/main_screen.dart';
+import '../../home/presentation/splash/splash_screen.dart';
 
 class AuthWrapper extends StatelessWidget {
   const AuthWrapper({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<AuthCubit, AuthState>(
+    return BlocBuilder<AuthBloc, AuthState>(
       builder: (context, state) {
         if (state is Authenticated) {
-          // Nếu người dùng đã đăng nhập, hiển thị màn hình chính
+          // Nếu đã đăng nhập -> Vào màn hình chính
           return const MainScreen();
-        } else if (state is Unauthenticated) {
-          // Nếu chưa đăng nhập, hiển thị màn hình đăng nhập
+        } else if (state is Unauthenticated || state is AuthFailure) {
+          // Nếu chưa đăng nhập hoặc lỗi -> Vào màn hình Login
           return const LoginScreen();
+        } else if (state is AuthInitial || state is AuthLoading) {
+          // Trong lúc khởi động hoặc đang xử lý -> Hiện màn hình Splash/Chờ
+          return const SplashScreen();
         }
-        // Trong lúc đang kiểm tra, hiển thị màn hình chờ
-        return const Scaffold(
-          body: Center(
-            child: CircularProgressIndicator(
-            ),
-          ),
-        );
+        
+        // Mặc định trả về Splash
+        return const SplashScreen();
       },
     );
   }

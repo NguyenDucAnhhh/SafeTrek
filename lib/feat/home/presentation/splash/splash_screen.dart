@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:safetrek_project/feat/home/presentation/login/login.dart';
 import 'package:safetrek_project/feat/auth/presentation/auth_wrapper.dart';
 
 class SplashScreen extends StatefulWidget {
