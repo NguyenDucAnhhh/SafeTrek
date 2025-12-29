@@ -114,7 +114,7 @@ class GuardianCard extends StatelessWidget {
           if (isPending) ...[
             const SizedBox(height: 8),
             const Text(
-              'Đang chờ chấp nhận',
+              '',
               style: TextStyle(
                 color: Color(0xFFF87171),
                 fontSize: 12,

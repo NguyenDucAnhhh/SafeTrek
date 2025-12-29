@@ -5,4 +5,6 @@ abstract class GuardianRepository {
   /// Trả về ID của bản ghi vừa tạo trên Firestore
   Future<String> addGuardian(Guardian guardian);
   Future<void> deleteGuardian(String docId);
+  // Thêm phương thức lấy ID người dùng hiện tại
+  String getUserId();
 }

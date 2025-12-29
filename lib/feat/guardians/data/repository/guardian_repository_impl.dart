@@ -16,6 +16,11 @@ class GuardianRepositoryImpl implements GuardianRepository {
   }
 
   @override
+  String getUserId() {
+    return _getUidOrThrow();
+  }
+
+  @override
   Future<List<Guardian>> getGuardians() async {
     final uid = _getUidOrThrow();
     return await remoteDataSource.getGuardians(uid);
