@@ -1,42 +1,44 @@
-// import 'package:volume_watcher/volume_watcher.dart';
+import 'package:volume_controller/volume_controller.dart';
 
 class HiddenPanicController {
   final int requiredPressCount;
+  final void Function()? onTriggered;
 
   int _pressCount = 0;
   DateTime? _lastPressTime;
+  double _lastVolume = 0;
   bool _isListening = false;
-
-  int? _listenerId; // ✅ FIX
 
   static const int _timeoutMs = 2000;
 
-  HiddenPanicController({required this.requiredPressCount});
+  HiddenPanicController({
+    required this.requiredPressCount,
+    this.onTriggered,
+  });
 
-  // ================= START / STOP =================
-
-  void start() {
+  /// Bắt đầu lắng nghe
+  Future<void> start() async {
     if (_isListening) return;
     _isListening = true;
 
-    // _listenerId = VolumeWatcher.addListener(_onVolumeChanged);
+    // Lấy âm lượng hiện tại làm mốc
+    _lastVolume = await VolumeController().getVolume();
+
+    VolumeController().listener((volume) {
+      _onVolumeChanged(volume);
+    });
   }
 
+  /// Ngừng lắng nghe
   void stop() {
-    if (!_isListening) return;
+    VolumeController().removeListener();
     _isListening = false;
-
-    if (_listenerId != null) {
-      // VolumeWatcher.removeListener(_listenerId);
-      _listenerId = null;
-    }
-
     _reset();
   }
 
-  // ================= LISTENER =================
-
   void _onVolumeChanged(double volume) {
+    if (volume == _lastVolume) return;
+
     final now = DateTime.now();
 
     if (_lastPressTime == null ||
@@ -46,6 +48,7 @@ class HiddenPanicController {
 
     _pressCount++;
     _lastPressTime = now;
+    _lastVolume = volume;
 
     if (_pressCount >= requiredPressCount) {
       _triggerSOS();
@@ -53,11 +56,8 @@ class HiddenPanicController {
     }
   }
 
-  // ================= ACTION =================
-
   void _triggerSOS() {
-    print('🚨 HIDDEN PANIC SOS TRIGGERED');
-    // TODO: Firebase / Notification / API
+    onTriggered?.call();
   }
 
   void _reset() {

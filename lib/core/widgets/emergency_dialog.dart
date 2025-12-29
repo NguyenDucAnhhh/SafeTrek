@@ -1,7 +1,13 @@
 import 'package:flutter/material.dart';
 
 class EmergencyDialog extends StatelessWidget {
-  const EmergencyDialog({super.key});
+  // ✅ THÊM MỚI: Khai báo callback để báo cho trang cha biết dialog đã đóng
+  final VoidCallback? onDismiss;
+
+  const EmergencyDialog({
+    super.key,
+    this.onDismiss, // ✅ THÊM MỚI: Đưa vào constructor
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -53,6 +59,8 @@ class EmergencyDialog extends StatelessWidget {
               ),
               InkWell(
                 onTap: () {
+                  // ✅ THÊM MỚI: Gọi callback trước khi pop
+                  onDismiss?.call();
                   Navigator.of(context).pop();
                 },
                 child: const Icon(Icons.close, color: Colors.white),
@@ -118,7 +126,8 @@ class EmergencyDialog extends StatelessWidget {
             children: <Widget>[
               ElevatedButton(
                 onPressed: () {
-                  // TODO: Implement View Location
+                  // ✅ THÊM MỚI: Gọi callback trước khi pop
+                  onDismiss?.call();
                   Navigator.of(context).pop();
                 },
                 style: ElevatedButton.styleFrom(
@@ -134,6 +143,8 @@ class EmergencyDialog extends StatelessWidget {
               const SizedBox(width: 10),
               ElevatedButton(
                 onPressed: () {
+                  // ✅ THÊM MỚI: Gọi callback trước khi pop
+                  onDismiss?.call();
                   Navigator.of(context).pop();
                 },
                 style: ElevatedButton.styleFrom(

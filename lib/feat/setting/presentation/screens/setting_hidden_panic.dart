@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-// import 'package:volume_watcher/volume_watcher.dart';
+import 'package:volume_controller/volume_controller.dart';
 import 'package:safetrek_project/core/widgets/secondary_header.dart';
 
 import '../../../../core/widgets/emergency_dialog.dart';
+import '../bloc/settings_bloc.dart';
+import '../bloc/settings_event.dart';
+import '../bloc/settings_state.dart';
 
-enum ActivationMethod {
-  volumeUp,
-  volumeDown,
-}
+enum ActivationMethod { volumeUp, volumeDown }
 
 class SettingHiddenPanic extends StatefulWidget {
   const SettingHiddenPanic({super.key});
@@ -25,20 +26,18 @@ class _SettingHiddenPanicState extends State<SettingHiddenPanic> {
   int _pressCount = 0;
   DateTime? _lastPressTime;
   double _lastVolume = 0;
-
   bool _isListening = false;
-  int? _volumeListenerId;
   bool _dialogShowing = false;
   static const int _timeoutMs = 2000;
 
-  static const _keyEnabled = 'hidden_panic_enabled';
   static const _keyMethod = 'hidden_panic_method';
   static const _keyCount = 'hidden_panic_count';
 
   @override
   void initState() {
     super.initState();
-    _loadSettings();
+    context.read<SettingsBloc>().add(LoadHiddenPanicEvent());
+    _loadExtraSettings();
   }
 
   @override
@@ -47,144 +46,104 @@ class _SettingHiddenPanicState extends State<SettingHiddenPanic> {
     super.dispose();
   }
 
-  // ================= STORAGE =================
-
-  Future<void> _loadSettings() async {
+  Future<void> _loadExtraSettings() async {
     final prefs = await SharedPreferences.getInstance();
-
     setState(() {
-      _isEnabled = prefs.getBool(_keyEnabled) ?? false;
-
-      final methodIndex = prefs.getInt(_keyMethod);
-      if (methodIndex != null &&
-          methodIndex < ActivationMethod.values.length) {
-        _selectedMethod = ActivationMethod.values[methodIndex];
-      }
-
       _selectedCount = prefs.getInt(_keyCount) ?? 5;
+      final methodStr = prefs.getString(_keyMethod) ?? 'volumeUp';
+      _selectedMethod = methodStr == 'volumeUp'
+          ? ActivationMethod.volumeUp
+          : ActivationMethod.volumeDown;
     });
-
-    if (_isEnabled) {
-      _startListening();
-    }
   }
 
-  Future<void> _saveSettings() async {
+  Future<void> _saveExtraSettings() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(_keyEnabled, _isEnabled);
-    await prefs.setInt(_keyMethod, _selectedMethod.index);
     await prefs.setInt(_keyCount, _selectedCount);
+    await prefs.setString(_keyMethod, _selectedMethod.name);
   }
 
   // ================= VOLUME LISTENER =================
 
-  void _startListening() async {
+  Future<void> _startListening() async {
     if (_isListening) return;
-
-    // _lastVolume = await VolumeWatcher.getCurrentVolume;
-    // _volumeListenerId = VolumeWatcher.addListener(_onVolumeChanged);
-
     _isListening = true;
+    _lastVolume = await VolumeController().getVolume();
+    VolumeController().listener((volume) => _onVolumeChanged(volume));
   }
 
   void _stopListening() {
-    if (!_isListening) return;
-
-    if (_volumeListenerId != null) {
-      // VolumeWatcher.removeListener(_volumeListenerId);
-      _volumeListenerId = null;
-    }
-
+    VolumeController().removeListener();
     _isListening = false;
-    _resetCounter();
+    _pressCount = 0;
+    _lastPressTime = null;
   }
 
   void _onVolumeChanged(double volume) {
-    debugPrint('🔊 Volume changed: $volume');
+    if (!_isEnabled || _dialogShowing) return;
 
-    if (!_isEnabled) return;
-
-    final isVolumeUp = volume > _lastVolume;
-    final isVolumeDown = volume < _lastVolume;
-
-    debugPrint('⬆️ Up: $isVolumeUp | ⬇️ Down: $isVolumeDown');
-
+    final bool isUp = volume > _lastVolume || (volume == 1.0 && _lastVolume == 1.0);
+    final bool isDown = volume < _lastVolume || (volume == 0.0 && _lastVolume == 0.0);
     _lastVolume = volume;
 
-    if (_selectedMethod == ActivationMethod.volumeUp && !isVolumeUp) return;
-    if (_selectedMethod == ActivationMethod.volumeDown && !isVolumeDown) return;
+    bool isCorrectMethod = (_selectedMethod == ActivationMethod.volumeUp && isUp) ||
+        (_selectedMethod == ActivationMethod.volumeDown && isDown);
+
+    if (!isCorrectMethod) return;
 
     final now = DateTime.now();
-
-    if (_lastPressTime == null ||
-        now.difference(_lastPressTime!).inMilliseconds > _timeoutMs) {
+    if (_lastPressTime == null || now.difference(_lastPressTime!).inMilliseconds > _timeoutMs) {
       _pressCount = 0;
     }
 
     _pressCount++;
     _lastPressTime = now;
 
-    debugPrint('🔢 Count: $_pressCount');
-
     if (_pressCount >= _selectedCount) {
       _triggerSOS();
-      _resetCounter();
+      _pressCount = 0;
     }
   }
 
-
-  void _resetCounter() {
-    _pressCount = 0;
-    _lastPressTime = null;
-  }
-
   void _triggerSOS() {
-    if (!mounted || _dialogShowing) return;
-
+    if (_dialogShowing) return;
     _dialogShowing = true;
-
-    debugPrint('🚨 SOS TRIGGERED');
-
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (_) => const EmergencyDialog(),
-    ).then((_) {
-      _dialogShowing = false;
-    });
+      builder: (context) => EmergencyDialog(
+        onDismiss: () => _dialogShowing = false,
+      ),
+    ).then((_) => _dialogShowing = false);
   }
 
-
-  // ================= UI =================
+  // ================= UI BUILDERS =================
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF3F5FF),
-      appBar: SecondaryHeader(title: 'Nút hoảng loạn ẩn'),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        child: Column(
-          children: [
-            const SizedBox(height: 8),
-            _buildToggleCard(),
-            const SizedBox(height: 16),
-            if (_isEnabled) ...[
-              _buildActivationOption(
-                icon: Icons.volume_up,
-                title: 'Tăng âm lượng',
-                subtitle: 'Nhấn tăng âm lượng liên tục',
-                value: ActivationMethod.volumeUp,
-              ),
+    return BlocListener<SettingsBloc, SettingsState>(
+      listener: (context, state) {
+        if (state is HiddenPanicLoaded) {
+          if (_isEnabled != state.enabled) {
+            setState(() => _isEnabled = state.enabled);
+            state.enabled ? _startListening() : _stopListening();
+          }
+        }
+      },
+      child: Scaffold(
+        backgroundColor: const Color(0xFFF3F5FF),
+        appBar: const SecondaryHeader(title: 'Nút hoảng loạn ẩn'),
+        body: SingleChildScrollView(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            children: [
+              _buildToggleCard(),
               const SizedBox(height: 16),
-              _buildActivationOption(
-                icon: Icons.volume_down,
-                title: 'Giảm âm lượng',
-                subtitle: 'Nhấn giảm âm lượng liên tục',
-                value: ActivationMethod.volumeDown,
-              ),
+              _buildImportantNoteCard(),
+              const SizedBox(height: 24),
+              if (_isEnabled) _buildActivationOptions(),
             ],
-          ],
+          ),
         ),
       ),
     );
@@ -196,20 +155,37 @@ class _SettingHiddenPanicState extends State<SettingHiddenPanic> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4)),
+        ],
       ),
       child: Row(
         children: [
+          Container(
+            width: 46, height: 46,
+            decoration: BoxDecoration(
+              color: const Color(0xFFFFE8E8),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Icon(Icons.flash_on_outlined, color: Color(0xFFF53E3E), size: 26),
+          ),
+          const SizedBox(width: 12),
           const Expanded(
-            child: Text(
-              'Bật nút hoảng loạn ẩn',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Nút Hoảng Loạn Ẩn', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Color(0xFF111827))),
+                SizedBox(height: 4),
+                Text('Kích hoạt cảnh báo bí mật', style: TextStyle(fontSize: 13, color: Color(0xFF6A7282))),
+              ],
             ),
           ),
           Switch(
             value: _isEnabled,
-            onChanged: (value) async {
+            activeColor: const Color(0xFFF53E3E),
+            onChanged: (value) {
               setState(() => _isEnabled = value);
-              await _saveSettings();
+              context.read<SettingsBloc>().add(ToggleHiddenPanicEvent(value));
               value ? _startListening() : _stopListening();
             },
           ),
@@ -218,61 +194,54 @@ class _SettingHiddenPanicState extends State<SettingHiddenPanic> {
     );
   }
 
-  Widget _buildActivationOption({
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required ActivationMethod value,
-  }) {
-    final isSelected = _selectedMethod == value;
+  Widget _buildActivationOptions() {
+    return Column(
+      children: [
+        _buildMethodTile('Phím Tăng âm lượng', ActivationMethod.volumeUp),
+        const SizedBox(height: 16),
+        _buildMethodTile('Phím Giảm âm lượng', ActivationMethod.volumeDown),
+      ],
+    );
+  }
 
+  Widget _buildMethodTile(String title, ActivationMethod method) {
+    final isSelected = _selectedMethod == method;
     return GestureDetector(
-      onTap: () async {
-        setState(() => _selectedMethod = value);
-        await _saveSettings();
+      onTap: () {
+        setState(() => _selectedMethod = method);
+        _saveExtraSettings();
       },
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
-          border: isSelected
-              ? Border.all(color: const Color(0xFF4F46E5), width: 1.5)
-              : null,
+          border: Border.all(color: isSelected ? const Color(0xFFF53E3E) : Colors.transparent, width: 1.5),
         ),
         child: Column(
           children: [
             Row(
               children: [
-                Icon(icon),
+                Icon(isSelected ? Icons.radio_button_checked : Icons.radio_button_off, color: isSelected ? const Color(0xFFF53E3E) : Colors.grey),
                 const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(title,
-                          style:
-                          const TextStyle(fontWeight: FontWeight.bold)),
-                      Text(subtitle,
-                          style: const TextStyle(fontSize: 13)),
-                    ],
-                  ),
-                ),
-                Radio<ActivationMethod>(
-                  value: value,
-                  groupValue: _selectedMethod,
-                  onChanged: (_) async {
-                    setState(() => _selectedMethod = value);
-                    await _saveSettings();
-                  },
-                ),
+                Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
               ],
             ),
             if (isSelected) ...[
-              const SizedBox(height: 12),
+              const Divider(height: 24),
               Row(
-                children: [3, 5, 7].map(_buildCountButton).toList(),
-              ),
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [3, 5, 7].map((count) => ChoiceChip(
+                  label: Text('${count}x'),
+                  selected: _selectedCount == count,
+                  selectedColor: const Color(0xFFFFE8E8),
+                  labelStyle: TextStyle(color: _selectedCount == count ? const Color(0xFFF53E3E) : Colors.black),
+                  onSelected: (_) {
+                    setState(() => _selectedCount = count);
+                    _saveExtraSettings();
+                  },
+                )).toList(),
+              )
             ],
           ],
         ),
@@ -280,20 +249,32 @@ class _SettingHiddenPanicState extends State<SettingHiddenPanic> {
     );
   }
 
-  Widget _buildCountButton(int count) {
-    final isSelected = _selectedCount == count;
-    return Padding(
-      padding: const EdgeInsets.only(right: 8),
-      child: ElevatedButton(
-        onPressed: () async {
-          setState(() => _selectedCount = count);
-          await _saveSettings();
-        },
-        style: ElevatedButton.styleFrom(
-          backgroundColor:
-          isSelected ? const Color(0xFF4F46E5) : Colors.grey.shade300,
-        ),
-        child: Text('${count}x'),
+  Widget _buildImportantNoteCard() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFEFCE8),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFFDE047).withOpacity(0.8)),
+      ),
+      child: const Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(Icons.info_outline, color: Color(0xFFB45309), size: 20),
+          SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Lưu ý quan trọng:', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+                SizedBox(height: 8),
+                Text('• Cảnh báo sẽ được gửi ngay lập tức khi kích hoạt', style: TextStyle(fontSize: 13, height: 1.5)),
+                Text('• Không có xác nhận, hãy cẩn thận tránh kích hoạt nhầm', style: TextStyle(fontSize: 13, height: 1.5)),
+                Text('• Hoạt động ngay cả khi ứng dụng đang chạy nền', style: TextStyle(fontSize: 13, height: 1.5)),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
