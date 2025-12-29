@@ -43,3 +43,14 @@ class GuardianAddedSuccess extends GuardianState {
   @override
   List<Object?> get props => [message];
 }
+
+/// Trạng thái khi đã thêm thành công và sẵn sàng gửi lời mời qua SMS
+class GuardianInviteReady extends GuardianState {
+  final String message;
+  final String phone;
+
+  const GuardianInviteReady({required this.message, required this.phone});
+
+  @override
+  List<Object?> get props => [message, phone];
+}

@@ -1,15 +1,15 @@
 class Guardian {
-  final String? id; // Đây là ID từ Firestore
+  final String? id;
   final String name;
   final String phone;
   final String? email;
-  final bool isAccepted;
+  final String status; // Thay đổi từ bool isAccepted sang String status
 
   Guardian({
-    this.id, 
-    required this.name, 
-    required this.phone, 
-    this.email, 
-    this.isAccepted = false
+    this.id,
+    required this.name,
+    required this.phone,
+    this.email,
+    this.status = 'Pending', // Mặc định là Pending
   });
 }

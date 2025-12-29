@@ -2,7 +2,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:safetrek_project/feat/guardians/domain/entity/Guardian.dart';
 
 class GuardianModel extends Guardian {
-  final String status;
   final DocumentReference? userReference;
 
   GuardianModel({
@@ -10,11 +9,9 @@ class GuardianModel extends Guardian {
     required super.name,
     required super.phone,
     super.email,
-    required this.status,
+    required super.status,
     this.userReference,
-  }) : super(
-          isAccepted: status == 'Accepted',
-        );
+  });
 
   factory GuardianModel.fromFirestore(DocumentSnapshot doc) {
     Map<String, dynamic> data = doc.data() as Map<String, dynamic>;

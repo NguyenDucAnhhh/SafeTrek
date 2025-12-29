@@ -13,19 +13,23 @@ class GuardianCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bool isAccepted = guardian.isAccepted;
-    final Color cardColor = isAccepted ? const Color(0xFFE8F5E9) : Colors.white;
-    final Color tagColor = isAccepted ? Colors.green : Colors.orange;
-    final String tagText = isAccepted ? 'Chấp nhận' : 'Chờ';
-    final IconData tagIcon = isAccepted ? Icons.check_circle : Icons.hourglass_empty;
+    // Xác định các thuộc tính hiển thị dựa trên status
+    final bool isPending = guardian.status == 'Pending';
+    final bool isAccepted = guardian.status == 'Accepted';
+    
+    Color cardBgColor = isAccepted ? const Color(0xFFF0FDF4) : Colors.white;
+    Color borderColor = isAccepted ? const Color(0xFFBBF7D0) : Colors.grey.shade200;
+    Color tagColor = isAccepted ? const Color(0xFF22C55E) : const Color(0xFFF59E0B);
+    String tagText = isAccepted ? 'Chấp nhận' : 'Chờ';
+    IconData tagIcon = isAccepted ? Icons.check_circle : Icons.hourglass_empty;
 
     return Container(
-      margin: const EdgeInsets.symmetric(vertical: 8.0),
-      padding: const EdgeInsets.all(12.0),
+      margin: const EdgeInsets.symmetric(vertical: 6.0),
+      padding: const EdgeInsets.all(14.0),
       decoration: BoxDecoration(
-        color: cardColor,
-        borderRadius: BorderRadius.circular(10.0),
-        border: Border.all(color: Colors.grey.shade300),
+        color: cardBgColor,
+        borderRadius: BorderRadius.circular(15.0),
+        border: Border.all(color: borderColor, width: 1.2),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -33,9 +37,9 @@ class GuardianCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Flexible(
+              // Tên và Tag trạng thái
+              Expanded(
                 child: Row(
-                  mainAxisSize: MainAxisSize.min,
                   children: [
                     Flexible(
                       child: Text(
@@ -43,24 +47,30 @@ class GuardianCard extends StatelessWidget {
                         style: const TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 16,
+                          color: Color(0xFF374151),
                         ),
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
                     const SizedBox(width: 8),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                       decoration: BoxDecoration(
                         color: tagColor,
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Row(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(tagIcon, color: Colors.white, size: 14),
+                          Icon(tagIcon, color: Colors.white, size: 12),
                           const SizedBox(width: 4),
                           Text(
                             tagText,
-                            style: const TextStyle(color: Colors.white, fontSize: 12),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
                         ],
                       ),
@@ -68,96 +78,75 @@ class GuardianCard extends StatelessWidget {
                   ],
                 ),
               ),
-              IconButton(
-                icon: const Icon(Icons.delete_outline, color: Colors.grey),
-                onPressed: () {
-                  buildShowDialog(context);
-                },
+              // Nút xóa
+              InkWell(
+                onTap: () => _showDeleteDialog(context),
+                child: Icon(Icons.delete_outline, color: Colors.grey.shade400, size: 22),
               ),
             ],
           ),
           const SizedBox(height: 8),
+          // Số điện thoại
           Row(
             children: [
-              const Icon(Icons.phone, size: 16, color: Colors.grey),
+              Icon(Icons.phone_android, size: 14, color: Colors.grey.shade500),
               const SizedBox(width: 8),
-              Text(guardian.phone),
+              Text(
+                guardian.phone,
+                style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
+              ),
             ],
           ),
-          if (guardian.email != null) ...[
-            const SizedBox(height: 4),
+          const SizedBox(height: 4),
+          // Email
+          if (guardian.email != null && guardian.email!.isNotEmpty)
             Row(
               children: [
-                const Icon(Icons.email, size: 16, color: Colors.grey),
+                Icon(Icons.email_outlined, size: 14, color: Colors.grey.shade500),
                 const SizedBox(width: 8),
-                Text(guardian.email!),
+                Text(
+                  guardian.email!,
+                  style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
+                ),
               ],
             ),
-          ],
-          if (!isAccepted) ...[
+          // Dòng chữ đỏ khi đang chờ
+          if (isPending) ...[
             const SizedBox(height: 8),
             const Text(
               'Đang chờ chấp nhận',
-              style: TextStyle(color: Colors.red, fontStyle: FontStyle.italic),
+              style: TextStyle(
+                color: Color(0xFFF87171),
+                fontSize: 12,
+                fontStyle: FontStyle.italic,
+              ),
             ),
-          ]
+          ],
         ],
       ),
     );
   }
 
-  Future<dynamic> buildShowDialog(BuildContext context) {
-    return showDialog(
+  void _showDeleteDialog(BuildContext context) {
+    showDialog(
       context: context,
       builder: (BuildContext dialogContext) {
         return AlertDialog(
-          backgroundColor: const Color(0xFFFEF2F2),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(15.0),
-            side: const BorderSide(color: Color(0xFFFCA5A5)),
-          ),
-          title: const Row(
-            children: [
-              Icon(Icons.warning_amber_rounded, color: Color(0xFFEF4444)),
-              SizedBox(width: 10),
-              Text(
-                'Xác nhận xóa',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-              ),
-            ],
-          ),
-          content: Text('Bạn có chắc chắn muốn xóa bảo vệ ${guardian.name}?'),
-          actionsAlignment: MainAxisAlignment.spaceEvenly,
-          actions: <Widget>[
-            ElevatedButton(
-              onPressed: () {
-                Navigator.of(dialogContext).pop(); // Close the dialog
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.white,
-                foregroundColor: Colors.black,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(30),
-                  side: const BorderSide(color: Color(0xFFD1D5DB)),
-                ),
-                padding: const EdgeInsets.symmetric(horizontal: 45, vertical: 12),
-              ),
-              child: const Text('Hủy'),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15.0)),
+          title: const Text('Xác nhận xóa', style: TextStyle(fontWeight: FontWeight.bold)),
+          content: Text('Bạn có chắc chắn muốn xóa người bảo vệ ${guardian.name}?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: const Text('Hủy', style: TextStyle(color: Colors.grey)),
             ),
             ElevatedButton(
               onPressed: () {
-                Navigator.of(dialogContext).pop(); // Close the dialog
-                onRemove(); // Call the original remove function
+                Navigator.of(dialogContext).pop();
+                onRemove();
               },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFEF4444),
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(30),
-                ),
-                padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 12),
-              ),
-              child: const Text('Đồng ý'),
+              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFEF4444)),
+              child: const Text('Xóa', style: TextStyle(color: Colors.white)),
             ),
           ],
         );

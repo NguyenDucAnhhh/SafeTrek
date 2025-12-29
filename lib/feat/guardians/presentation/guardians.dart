@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:share_plus/share_plus.dart';
 
 // Import các lớp Clean Architecture
 import 'package:safetrek_project/feat/guardians/data/data_source/guardian_remote_data_source.dart';
@@ -168,12 +169,24 @@ class GuardiansView extends StatelessWidget {
       listener: (context, state) {
         if (state is GuardianAddedSuccess) {
           showSuccessSnackBar(context, state.message);
-        } else if (state is GuardianError) {
+        }
+
+        // THÊM ĐOẠN NÀY: Khi BLoC báo đã sẵn sàng gửi lời mời
+        else if (state is GuardianInviteReady) {
+          // Mở bảng chia sẻ của điện thoại
+          Share.share(
+              state.message,
+              subject: 'Lời mời làm người bảo vệ SafeTrek'
+          );
+        }
+
+        else if (state is GuardianError) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(state.message), backgroundColor: Colors.red),
           );
         }
       },
+
       child: Scaffold(
         body: Container(
           width: double.infinity,

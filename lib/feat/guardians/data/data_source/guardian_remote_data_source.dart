@@ -21,17 +21,19 @@ class GuardianRemoteDataSource {
         .toList();
   }
 
-  // Thêm người bảo vệ mới vào Collection 'guardians' ở gốc
-  Future<void> addGuardian(String userId, GuardianModel guardian) async {
+  // Thêm người bảo vệ mới vào Collection 'guardians' ở gốc và trả về ID
+  Future<String> addGuardian(String userId, GuardianModel guardian) async {
     final userRef = firestore.collection('users').doc(userId);
     
     // Tạo dữ liệu để lưu, đảm bảo userID là một Reference
     final data = guardian.toFirestore();
     data['userID'] = userRef;
 
-    await firestore
+    final docRef = await firestore
         .collection('guardians')
         .add(data);
+        
+    return docRef.id;
   }
 
   // Xóa người bảo vệ theo Document ID

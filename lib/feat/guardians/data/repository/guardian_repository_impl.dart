@@ -8,25 +8,23 @@ class GuardianRepositoryImpl implements GuardianRepository {
 
   GuardianRepositoryImpl(this.remoteDataSource);
 
-  // ID của user hiện tại (Sẽ lấy từ Auth của người kia mời bạn)
   final String _currentUserId = 'fBMzuk8GwEjeqccc1j54';
 
   @override
   Future<List<Guardian>> getGuardians() async {
-    // Gọi DataSource để lấy danh sách Model rồi trả về dưới dạng Entity Guardian
     return await remoteDataSource.getGuardians(_currentUserId);
   }
 
   @override
-  Future<void> addGuardian(Guardian guardian) async {
-    // Chuyển đổi từ Entity sang Model để phù hợp với Firestore
+  Future<String> addGuardian(Guardian guardian) async {
     final model = GuardianModel(
       name: guardian.name,
       phone: guardian.phone,
       email: guardian.email,
-      status: 'Pending', // Theo cấu trúc trong ảnh bạn gửi
+      status: 'Pending',
     );
-    await remoteDataSource.addGuardian(_currentUserId, model);
+    // TRẢ VỀ ID THẬT TỪ FIRESTORE
+    return await remoteDataSource.addGuardian(_currentUserId, model);
   }
 
   @override

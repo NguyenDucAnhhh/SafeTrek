@@ -8,7 +8,6 @@ class GuardianBloc extends Bloc<GuardianEvent, GuardianState> {
 
   GuardianBloc(this.repository) : super(GuardianInitial()) {
     
-    // Xử lý sự kiện tải danh sách người bảo vệ từ Firebase
     on<LoadGuardiansEvent>((event, emit) async {
       emit(GuardianLoading());
       try {
@@ -19,26 +18,30 @@ class GuardianBloc extends Bloc<GuardianEvent, GuardianState> {
       }
     });
 
-    // Xử lý sự kiện thêm người bảo vệ mới
     on<AddGuardianEvent>((event, emit) async {
       try {
-        await repository.addGuardian(event.guardian);
-        emit(const GuardianAddedSuccess("Thêm người bảo vệ thành công !"));
+        // Lấy ID thật từ Firebase sau khi thêm thành công
+        final String docId = await repository.addGuardian(event.guardian);
         
-        // Tự động tải lại danh sách mới để cập nhật UI
+        emit(const GuardianAddedSuccess("Đã lưu thông tin người bảo vệ!"));
+
+        // TẠO LINK THẬT VỚI ID CHÍNH XÁC
+        final String inviteLink = "https://safetrek-2b5a0.web.app?id=$docId";
+        final String inviteMessage = "Tôi muốn thêm bạn làm người bảo vệ trên SafeTrek. Nhấn vào link để xác nhận giúp tôi nhé: $inviteLink";
+
+        emit(GuardianInviteReady(message: inviteMessage, phone: event.guardian.phone));
+        
+        // Tải lại danh sách
         add(LoadGuardiansEvent());
       } catch (e) {
-        emit(GuardianError("Lỗi khi thêm người bảo vệ: $e"));
+        emit(GuardianError("Lỗi khi thêm: ${e.toString()}"));
       }
     });
 
-    // Xử lý sự kiện xóa người bảo vệ
     on<RemoveGuardianEvent>((event, emit) async {
-      print("Đang chuẩn bị xóa ID: ${event.docId}");
       try {
-        // Gọi hàm xóa với event.docId
         await repository.deleteGuardian(event.docId);
-        add(LoadGuardiansEvent()); // Tải lại danh sách
+        add(LoadGuardiansEvent()); 
       } catch (e) {
         emit(GuardianError("Lỗi khi xóa: $e"));
       }
