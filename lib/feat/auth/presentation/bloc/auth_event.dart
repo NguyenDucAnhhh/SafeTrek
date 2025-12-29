@@ -1,50 +1,40 @@
 import 'package:equatable/equatable.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 abstract class AuthEvent extends Equatable {
   const AuthEvent();
 
   @override
-  List<Object?> get props => [];
+  List<Object?> get props => []; // Thay đổi ở đây: Object -> Object?
 }
 
-/// Kiểm tra trạng thái xác thực khi khởi động ứng dụng
-class AuthStatusChanged extends AuthEvent {
-  final dynamic user; // Kiểu User từ firebase_auth
+class SignInRequested extends AuthEvent {
+  final String email;
+  final String password;
 
-  const AuthStatusChanged(this.user);
+  const SignInRequested({required this.email, required this.password});
+
+  @override
+  List<Object> get props => [email, password];
+}
+
+class SignUpRequested extends AuthEvent {
+  final String email;
+  final String password;
+
+  const SignUpRequested({required this.email, required this.password});
+
+  @override
+  List<Object> get props => [email, password];
+}
+
+class SignOutRequested extends AuthEvent {}
+
+class UserChanged extends AuthEvent {
+  final User? user;
+
+  const UserChanged(this.user);
 
   @override
   List<Object?> get props => [user];
 }
-
-/// Sự kiện đăng nhập
-class LoginRequested extends AuthEvent {
-  final String email;
-  final String password;
-
-  const LoginRequested({required this.email, required this.password});
-
-  @override
-  List<Object?> get props => [email, password];
-}
-
-/// Sự kiện đăng ký
-class RegisterRequested extends AuthEvent {
-  final String email;
-  final String password;
-  final String name;
-  final String phone;
-
-  const RegisterRequested({
-    required this.email,
-    required this.password,
-    required this.name,
-    required this.phone,
-  });
-
-  @override
-  List<Object?> get props => [email, password, name, phone];
-}
-
-/// Sự kiện đăng xuất
-class LogoutRequested extends AuthEvent {}

@@ -24,7 +24,7 @@ class MyApp extends StatelessWidget {
     return RepositoryProvider<AuthRepository>(
       create: (context) => AuthRepositoryImpl(FirebaseAuth.instance),
       child: BlocProvider<AuthBloc>( // Đổi từ AuthCubit sang AuthBloc
-        create: (context) => AuthBloc(context.read<AuthRepository>()),
+        create: (context) => AuthBloc(authRepository: context.read<AuthRepository>()),
         child: const MaterialApp(
           debugShowCheckedModeBanner: false,
           title: 'SafeTrek',

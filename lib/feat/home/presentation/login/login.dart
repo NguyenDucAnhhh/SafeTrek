@@ -1,8 +1,9 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:safetrek_project/feat/auth/presentation/cubit/auth_cubit.dart';
-import 'package:safetrek_project/feat/auth/presentation/cubit/auth_state.dart';
+import 'package:safetrek_project/feat/auth/presentation/bloc/auth_bloc.dart';
+import 'package:safetrek_project/feat/auth/presentation/bloc/auth_event.dart';
+import 'package:safetrek_project/feat/auth/presentation/bloc/auth_state.dart';
 import '../register/register_screen.dart';
 import '../../../../core/widgets/app_bar.dart';
 import '../main_screen.dart'; // Đảm bảo import MainScreen
@@ -43,15 +44,14 @@ class _LoginScreenState extends State<LoginScreen> {
         child: SafeArea(
           child: SingleChildScrollView(
             padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 20.0),
-            child: BlocListener<AuthCubit, AuthState>(
+            child: BlocListener<AuthBloc, AuthState>(
               listener: (context, state) {
-                if (state is AuthError) {
+                if (state is AuthFailure) {
                   ScaffoldMessenger.of(context)
                     ..hideCurrentSnackBar()
                     ..showSnackBar(SnackBar(content: Text(state.message)));
                 }
                 
-                // FIX TẠI ĐÂY: Khi đã xác thực thành công, phải chủ động chuyển màn hình
                 if (state is Authenticated) {
                   Navigator.of(context).pushReplacement(
                     MaterialPageRoute(builder: (context) => const MainScreen()),
@@ -158,16 +158,18 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                           ),
                           const SizedBox(height: 32),
-                          BlocBuilder<AuthCubit, AuthState>(
+                          BlocBuilder<AuthBloc, AuthState>(
                             builder: (context, state) {
                               if (state is AuthLoading) {
                                 return const Center(child: CircularProgressIndicator());
                               }
                               return ElevatedButton(
                                 onPressed: () {
-                                  context.read<AuthCubit>().signIn(
-                                    email: _emailController.text.trim(),
-                                    password: _passwordController.text.trim(),
+                                  context.read<AuthBloc>().add(
+                                    SignInRequested(
+                                      email: _emailController.text.trim(),
+                                      password: _passwordController.text.trim(),
+                                    ),
                                   );
                                 },
                                 style: ElevatedButton.styleFrom(

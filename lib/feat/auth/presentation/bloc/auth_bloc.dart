@@ -1,85 +1,53 @@
 import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:safetrek_project/feat/auth/domain/repository/auth_repository.dart';
 import 'auth_event.dart';
 import 'auth_state.dart';
-import '../../domain/repository/auth_repository.dart';
 
 class AuthBloc extends Bloc<AuthEvent, AuthState> {
   final AuthRepository _authRepository;
   StreamSubscription<User?>? _userSubscription;
 
-  AuthBloc(this._authRepository) : super(AuthInitial()) {
-    
-    // 1. Lắng nghe thay đổi trạng thái từ Firebase Auth (Token thay đổi)
-    _userSubscription = _authRepository.user.listen(
-      (user) => add(AuthStatusChanged(user)),
-    );
+  AuthBloc({required AuthRepository authRepository}) : _authRepository = authRepository, super(AuthInitial()) {
+    on<SignInRequested>(_onSignInRequested);
+    on<SignUpRequested>(_onSignUpRequested);
+    on<SignOutRequested>(_onSignOutRequested);
+    on<UserChanged>(_onUserChanged);
 
-    // 2. Xử lý khi trạng thái Auth thay đổi (Token có hoặc mất)
-    on<AuthStatusChanged>((event, emit) {
-      if (event.user != null) {
-        emit(Authenticated(event.user as User));
-      } else {
-        emit(Unauthenticated());
-      }
+    _userSubscription = _authRepository.user.listen((user) {
+      add(UserChanged(user));
     });
+  }
 
-    // 3. Xử lý sự kiện Đăng nhập
-    on<LoginRequested>((event, emit) async {
-      emit(AuthLoading());
-      try {
-        await _authRepository.signInWithEmailAndPassword(
-          email: event.email, 
-          password: event.password
-        );
-        // Trạng thái Authenticated sẽ tự động được phát ra bởi listener ở trên
-      } catch (e) {
-        emit(AuthFailure(e.toString()));
-        // Quay lại trạng thái chưa đăng nhập sau khi báo lỗi
-        await Future.delayed(const Duration(seconds: 1));
-        emit(Unauthenticated());
-      }
-    });
+  Future<void> _onSignInRequested(SignInRequested event, Emitter<AuthState> emit) async {
+    emit(AuthLoading());
+    try {
+      await _authRepository.signInWithEmailAndPassword(email: event.email, password: event.password);
+    } catch (e) {
+      emit(AuthFailure(e.toString()));
+    }
+  }
 
-    // 4. Xử lý sự kiện Đăng ký
-    on<RegisterRequested>((event, emit) async {
-      emit(AuthLoading());
-      try {
-        // Tạo tài khoản Auth
-        await _authRepository.signUpWithEmailAndPassword(
-          email: event.email, 
-          password: event.password
-        );
+  Future<void> _onSignUpRequested(SignUpRequested event, Emitter<AuthState> emit) async {
+    emit(AuthLoading());
+    try {
+      await _authRepository.signUpWithEmailAndPassword(email: event.email, password: event.password);
+    } catch (e) {
+      emit(AuthFailure(e.toString()));
+    }
+  }
 
-        // Lưu thông tin bổ sung vào Firestore
-        final currentUser = FirebaseAuth.instance.currentUser;
-        if (currentUser != null) {
-          await FirebaseFirestore.instance.collection('users').doc(currentUser.uid).set({
-            'name': event.name,
-            'phone': event.phone,
-            'email': event.email,
-            'safePIN': null,
-            'duressPIN': null,
-          });
-        }
-      } catch (e) {
-        emit(AuthFailure(e.toString()));
-        await Future.delayed(const Duration(seconds: 1));
-        emit(Unauthenticated());
-      }
-    });
-
-    // 5. Xử lý sự kiện Đăng xuất
-    on<LogoutRequested>((event, emit) async {
-      try {
-        await _authRepository.signOut();
-        // Unauthenticated sẽ được phát ra bởi listener
-      } catch (e) {
-        emit(AuthFailure(e.toString()));
-      }
-    });
+  Future<void> _onSignOutRequested(SignOutRequested event, Emitter<AuthState> emit) async {
+    await _authRepository.signOut();
+  }
+  
+  void _onUserChanged(UserChanged event, Emitter<AuthState> emit) {
+    if (event.user != null) {
+      emit(Authenticated(event.user!));
+    } else {
+      emit(Unauthenticated());
+    }
   }
 
   @override
