@@ -101,16 +101,6 @@ class SettingsRemoteDataSourceImpl implements SettingsRemoteDataSource {
     });
   }
 
-  // @override
-  // Future<void> changePassword(String oldPassword, String newPassword) async {
-  //   final user = auth.currentUser;
-  //   if (user == null) throw ServerException();
-  //
-  //   final cred = EmailAuthProvider.credential(email: user.email!, password: oldPassword);
-  //   await user.reauthenticateWithCredential(cred);
-  //   await user.updatePassword(newPassword);
-  // }
-
   @override
   Future<void> changePassword(String oldPassword, String newPassword) async {
     final user = auth.currentUser;

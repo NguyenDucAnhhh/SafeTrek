@@ -12,16 +12,8 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
     on<ChangeSafePinEvent>(_changeSafePin);
     on<ChangeDuressPinEvent>(_changeDuressPin);
     on<ChangePasswordEvent>(_changePassword);
-    on<LoadHiddenPanicEvent>((event, emit) async {
-      final enabled = await repository.getHiddenPanic();
-      emit(HiddenPanicLoaded(enabled));
-    });
-
-    on<ToggleHiddenPanicEvent>((event, emit) async {
-      await repository.setHiddenPanic(event.enabled);
-      emit(HiddenPanicLoaded(event.enabled));
-    });
-
+    on<LoadHiddenPanicSettingsEvent>(_loadHiddenPanicSettings);
+    on<SaveHiddenPanicSettingsEvent>(_saveHiddenPanicSettings);
   }
 
   Future<void> _loadUserSettings(
@@ -37,23 +29,13 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
 
   Future<void> _updateProfile(UpdateProfileEvent e, Emitter<SettingsState> emit) async {
     try {
-      // 1. Cập nhật lên Firebase
       await repository.updateProfile(e.name, e.phone, e.email);
-
-      // 2. Lấy dữ liệu mới nhất ngay lập tức
-      final updatedUser = await repository.getUserSettings();
-
-      // 3. Phát ra trạng thái thành công kèm dữ liệu mới
-      // Giả sử bạn muốn hiện thông báo, hãy emit Success trước rồi Loaded sau,
-      // hoặc chỉ cần emit Loaded là đủ để UI update tên mới.
-      emit(SettingsLoaded(userSetting: updatedUser));
-
-      print("Cập nhật hồ sơ thành công!");
+      emit(const SettingsSuccess('Cập nhật hồ sơ thành công'));
+      add(LoadUserSettingsEvent());
     } catch (e) {
       emit(SettingsError("Lỗi khi cập nhật hồ sơ: $e"));
     }
   }
-
 
   Future<void> _changeSafePin(ChangeSafePinEvent e, Emitter<SettingsState> emit) async {
     try {
@@ -77,13 +59,36 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
 
   Future<void> _changePassword(ChangePasswordEvent e, Emitter<SettingsState> emit) async {
     try {
-      await repository.changePassword(
-        e.oldPassword,
-        e.newPassword,
-      );
+      await repository.changePassword(e.oldPassword, e.newPassword);
       emit(const SettingsSuccess('Đổi mật khẩu thành công'));
     } catch (e) {
       emit(SettingsError("Lỗi khi đổi mật khẩu: $e"));
+    }
+  }
+
+  Future<void> _loadHiddenPanicSettings(
+      LoadHiddenPanicSettingsEvent event, Emitter<SettingsState> emit) async {
+    try {
+      final settings = await repository.loadHiddenPanicSettings();
+      emit(HiddenPanicSettingsLoaded(
+        isEnabled: settings['isEnabled'] ?? false,
+        method: settings['method'] ?? 'volume',
+        pressCount: settings['pressCount'] ?? 5,
+      ));
+    } catch (e) {
+      emit(SettingsError("Không thể tải cài đặt nút hoảng loạn: $e"));
+    }
+  }
+
+  Future<void> _saveHiddenPanicSettings(
+      SaveHiddenPanicSettingsEvent event, Emitter<SettingsState> emit) async {
+    try {
+      await repository.saveHiddenPanicSettings(
+          event.isEnabled, event.method, event.pressCount);
+      emit(const SettingsSuccess('Đã lưu cài đặt nút hoảng loạn'));
+      add(LoadHiddenPanicSettingsEvent()); // Tải lại để cập nhật UI
+    } catch (e) {
+      emit(SettingsError("Lỗi khi lưu cài đặt: $e"));
     }
   }
 }

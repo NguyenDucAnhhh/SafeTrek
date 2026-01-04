@@ -3,8 +3,10 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'feat/home/presentation/splash/splash_screen.dart';
+import 'feat/setting/presentation/bloc/settings_event.dart';
 import 'firebase_options.dart';
 
 // AUTH
@@ -17,7 +19,10 @@ import 'feat/setting/domain/repository/settings_repository.dart';
 import 'feat/setting/data/datasource/setting_remote_data_source.dart';
 import 'feat/setting/data/datasource/settings_local_data_source.dart';
 import 'feat/setting/data/repository/setting_repository_impl.dart';
-import 'feat/setting/presentation/bloc/settings_bloc.dart'; // ✅ THÊM IMPORT NÀY
+import 'feat/setting/presentation/bloc/settings_bloc.dart';
+import 'panic/panic_listener.dart';
+
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -26,14 +31,18 @@ void main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
+  // Lấy instance của SharedPreferences
+  final prefs = await SharedPreferences.getInstance();
+
   // ================= SETTINGS DATA =================
   final settingsRemoteDataSource = SettingsRemoteDataSourceImpl(
     firestore: FirebaseFirestore.instance,
     auth: FirebaseAuth.instance,
   );
 
-  final settingsLocalDataSource = SettingsLocalDataSourceImpl();
+  final settingsLocalDataSource = SettingsLocalDataSourceImpl(sharedPreferences: prefs);
 
+  // ================= REPOSITORIES =================
   final settingsRepository = SettingsRepositoryImpl(
     remoteDataSource: settingsRemoteDataSource,
     localDataSource: settingsLocalDataSource,
@@ -70,18 +79,26 @@ class MyApp extends StatelessWidget {
         BlocProvider<SettingsBloc>(
           create: (context) => SettingsBloc(
             context.read<SettingsRepository>(),
-          ),
+          )..add(LoadHiddenPanicSettingsEvent()),
         ),
       ],
-      child: MaterialApp(
-        debugShowCheckedModeBanner: false,
-        title: 'SafeTrek',
-        theme: ThemeData(
-          useMaterial3: true,
-          colorSchemeSeed: Colors.indigo,
+
+        child: MaterialApp(
+          navigatorKey: navigatorKey,
+          debugShowCheckedModeBanner: false,
+          title: 'SafeTrek',
+          theme: ThemeData(
+            useMaterial3: true,
+            colorSchemeSeed: Colors.indigo,
+          ),
+          builder: (context, child) {
+          return PanicListener(
+            child: child!,
+          );
+        },
+          home: const SplashScreen(),
         ),
-        home: const SplashScreen(),
-      ),
+
     );
   }
 }

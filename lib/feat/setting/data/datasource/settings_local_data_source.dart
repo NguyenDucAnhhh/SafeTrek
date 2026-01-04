@@ -1,22 +1,32 @@
 import 'package:shared_preferences/shared_preferences.dart';
 
 abstract class SettingsLocalDataSource {
-  Future<bool> getHiddenPanic();
-  Future<void> setHiddenPanic(bool enabled);
+  Future<void> saveHiddenPanicSettings(bool isEnabled, String method, int pressCount);
+  Future<Map<String, dynamic>> loadHiddenPanicSettings();
 }
 
 class SettingsLocalDataSourceImpl implements SettingsLocalDataSource {
-  static const _keyHiddenPanic = 'hidden_panic_enabled';
+  final SharedPreferences sharedPreferences;
+
+  SettingsLocalDataSourceImpl({required this.sharedPreferences});
+
+  static const String _isEnabledKey = 'hiddenPanic_isEnabled';
+  static const String _methodKey = 'hiddenPanic_method';
+  static const String _pressCountKey = 'hiddenPanic_pressCount';
 
   @override
-  Future<bool> getHiddenPanic() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getBool(_keyHiddenPanic) ?? false;
+  Future<void> saveHiddenPanicSettings(bool isEnabled, String method, int pressCount) async {
+    await sharedPreferences.setBool(_isEnabledKey, isEnabled);
+    await sharedPreferences.setString(_methodKey, method);
+    await sharedPreferences.setInt(_pressCountKey, pressCount);
   }
 
   @override
-  Future<void> setHiddenPanic(bool enabled) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(_keyHiddenPanic, enabled);
+  Future<Map<String, dynamic>> loadHiddenPanicSettings() async {
+    return {
+      'isEnabled': sharedPreferences.getBool(_isEnabledKey) ?? false,
+      'method': sharedPreferences.getString(_methodKey) ?? 'volume',
+      'pressCount': sharedPreferences.getInt(_pressCountKey) ?? 5,
+    };
   }
 }

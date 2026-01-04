@@ -6,6 +6,8 @@ abstract class SettingsRepository {
   Future<void> changeSafePin(String pin);
   Future<void> changeDuressPin(String pin);
   Future<void> changePassword(String oldPassword, String newPassword);
-  Future<bool> getHiddenPanic();
-  Future<void> setHiddenPanic(bool enabled);
+
+  // Methods for Hidden Panic
+  Future<void> saveHiddenPanicSettings(bool isEnabled, String method, int pressCount);
+  Future<Map<String, dynamic>> loadHiddenPanicSettings();
 }

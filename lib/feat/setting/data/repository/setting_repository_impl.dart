@@ -44,12 +44,13 @@ class SettingsRepositoryImpl implements SettingsRepository {
 
   // ===== LOCAL (Hidden Panic) =====
   @override
-  Future<bool> getHiddenPanic() {
-    return localDataSource.getHiddenPanic();
+  Future<void> saveHiddenPanicSettings(
+      bool isEnabled, String method, int pressCount) async {
+    return await localDataSource.saveHiddenPanicSettings(isEnabled, method, pressCount);
   }
 
   @override
-  Future<void> setHiddenPanic(bool enabled) {
-    return localDataSource.setHiddenPanic(enabled);
+  Future<Map<String, dynamic>> loadHiddenPanicSettings() async {
+    return await localDataSource.loadHiddenPanicSettings();
   }
 }

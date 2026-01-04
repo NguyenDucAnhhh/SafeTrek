@@ -7,10 +7,9 @@ abstract class SettingsEvent extends Equatable {
   List<Object?> get props => [];
 }
 
-// ================= LOAD =================
+// Events for User Profile
 class LoadUserSettingsEvent extends SettingsEvent {}
 
-// ================= UPDATE PROFILE =================
 class UpdateProfileEvent extends SettingsEvent {
   final String name;
   final String phone;
@@ -27,44 +26,38 @@ class UpdateProfileEvent extends SettingsEvent {
   List<Object?> get props => [name, phone, email];
 }
 
-// ================= SAFE PIN =================
+// Events for PINs
 class ChangeSafePinEvent extends SettingsEvent {
   final String pin;
-
   const ChangeSafePinEvent(this.pin);
-
-  @override
-  List<Object?> get props => [pin];
 }
 
-// ================= DURESS PIN =================
 class ChangeDuressPinEvent extends SettingsEvent {
   final String pin;
-
   const ChangeDuressPinEvent(this.pin);
-
-  @override
-  List<Object?> get props => [pin];
 }
 
-// ================= PASSWORD =================
+// Event for Password
 class ChangePasswordEvent extends SettingsEvent {
   final String oldPassword;
   final String newPassword;
-
   const ChangePasswordEvent(this.oldPassword, this.newPassword);
-
-  @override
-  List<Object?> get props => [oldPassword, newPassword];
-
 }
 
-class LoadHiddenPanicEvent extends SettingsEvent {}
+// Events for Hidden Panic
+class LoadHiddenPanicSettingsEvent extends SettingsEvent {}
 
-class ToggleHiddenPanicEvent extends SettingsEvent {
-  final bool enabled;
-  ToggleHiddenPanicEvent(this.enabled);
+class SaveHiddenPanicSettingsEvent extends SettingsEvent {
+  final bool isEnabled;
+  final String method;
+  final int pressCount;
+
+  const SaveHiddenPanicSettingsEvent({
+    required this.isEnabled,
+    required this.method,
+    required this.pressCount,
+  });
 
   @override
-  List<Object> get props => [enabled];
+  List<Object?> get props => [isEnabled, method, pressCount];
 }
