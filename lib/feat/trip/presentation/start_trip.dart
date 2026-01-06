@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:safetrek_project/feat/trip/data/model/trip_model.dart';
 import 'package:safetrek_project/feat/trip/presentation/trip_monitoring.dart';
 import 'package:safetrek_project/core/widgets/app_bar.dart';
-import 'package:safetrek_project/core/widgets/bottom_navigation.dart';
 import 'package:safetrek_project/core/widgets/secondary_header.dart';
 import 'package:safetrek_project/feat/trip/data/data_source/trip_remote_data_source.dart';
 import 'package:safetrek_project/feat/trip/data/repository/trip_repository_impl.dart';
@@ -12,7 +12,6 @@ import 'package:safetrek_project/feat/trip/domain/entity/trip.dart';
 import 'package:safetrek_project/feat/trip/presentation/bloc/trip_bloc.dart';
 import 'package:safetrek_project/feat/trip/presentation/bloc/trip_event.dart';
 import 'package:safetrek_project/feat/trip/presentation/bloc/trip_state.dart';
-import 'package:safetrek_project/feat/trip/data/services/location_service.dart';
 
 class StartTrip extends StatefulWidget {
   const StartTrip({super.key});
@@ -22,18 +21,11 @@ class StartTrip extends StatefulWidget {
 }
 
 class _StartTripState extends State<StartTrip> {
-  int _selectedIndex = 0;
   final TextEditingController _destinationController = TextEditingController();
   final TextEditingController _timeController = TextEditingController(text: '15');
   int? _selectedTime;
   late TripBloc _tripBloc;
-  bool _hasActiveTip = false;
-
-  void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
-  }
+  bool _isLoading = true;
 
   @override
   void initState() {
@@ -44,27 +36,55 @@ class _StartTripState extends State<StartTrip> {
         TripRemoteDataSource(FirebaseFirestore.instance),
       ),
     );
-    _checkActiveTrip();
+    _checkAndResumeActiveTrip();
   }
 
-  Future<void> _checkActiveTrip() async {
+  Future<void> _checkAndResumeActiveTrip() async {
     try {
       final uid = FirebaseAuth.instance.currentUser?.uid;
-      if (uid == null) return;
+      if (uid == null) {
+        if (mounted) setState(() => _isLoading = false);
+        return;
+      }
 
       final snapshot = await FirebaseFirestore.instance
           .collection('trips')
           .where('userId', isEqualTo: uid)
-          .where('status', isEqualTo: 'Đang tiến hành')
+          .where('status', isEqualTo: 'Active')
+          .orderBy('startedAt', descending: true)
+          .limit(1)
           .get();
 
-      if (mounted) {
-        setState(() {
-          _hasActiveTip = snapshot.docs.isNotEmpty;
-        });
+      if (snapshot.docs.isNotEmpty) {
+        final activeTripDoc = snapshot.docs.first;
+        final activeTrip = TripModel.fromFirestore(activeTripDoc);
+
+        final now = DateTime.now();
+        final remaining = activeTrip.expectedEndTime.isAfter(now)
+            ? activeTrip.expectedEndTime.difference(now)
+            : Duration.zero;
+
+        if (mounted) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => TripMonitoring(
+                durationInMinutes: remaining.inMinutes,
+                tripId: activeTrip.id!,
+              ),
+            ),
+          );
+        }
+      } else {
+        if (mounted) {
+          setState(() => _isLoading = false);
+        }
       }
     } catch (e) {
       debugPrint('Error checking active trip: $e');
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
@@ -82,19 +102,16 @@ class _StartTripState extends State<StartTrip> {
       bloc: _tripBloc,
       listener: (context, state) {
         if (state is TripAddedSuccess) {
-          // Trip saved to Firestore, navigate to monitoring
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(state.message)),
-          );
           final duration = int.tryParse(_timeController.text) ?? 15;
           Navigator.push(
             context,
             MaterialPageRoute(
               builder: (context) =>
-                  TripMonitoring(durationInMinutes: duration),
+                  TripMonitoring(durationInMinutes: duration, tripId: state.tripId),
             ),
-          );
+          ).then((_) => _checkAndResumeActiveTrip());
         } else if (state is TripError) {
+          if(mounted) setState(() => _isLoading = false);
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(state.message),
@@ -105,112 +122,69 @@ class _StartTripState extends State<StartTrip> {
       },
       child: Scaffold(
         appBar: const SecondaryHeader(title: 'Chọn chuyến đi'),
-        body: Container(
-        height: double.infinity,
-        width: double.infinity,
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Color(0xFFF1F4FF), Color(0xFFE2E9FF)],
-          ),
-        ),
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const SizedBox(height: 20,),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    if (_hasActiveTip)
-                      Container(
-                        padding: const EdgeInsets.all(16),
-                        margin: const EdgeInsets.only(bottom: 16),
-                        decoration: BoxDecoration(
-                          color: Colors.orange.shade100,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: Colors.orange.shade300),
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(Icons.warning_amber_rounded,
-                                color: Colors.orange.shade700, size: 24),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const Text(
-                                    'Đang có chuyến đi hoạt động',
-                                    style: TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        color: Color(0xFFB8860B)),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  const Text(
-                                    'Vui lòng hoàn thành hoặc hủy chuyến đi hiện tại',
-                                    style: TextStyle(
-                                        fontSize: 12,
-                                        color: Color(0xFF8B6914)),
-                                  ),
-                                ],
-                              ),
+        body: _isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : Container(
+                height: double.infinity,
+                width: double.infinity,
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [Color(0xFFF1F4FF), Color(0xFFE2E9FF)],
+                  ),
+                ),
+                child: SingleChildScrollView(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 20, 16, 16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        _buildDestinationCard(),
+                        const SizedBox(height: 20),
+                        _buildTimeCard(),
+                        const SizedBox(height: 20),
+                        _buildInfoCard(),
+                        const SizedBox(height: 32),
+                        ElevatedButton(
+                          onPressed: () {
+                            if(mounted) setState(() => _isLoading = true);
+                            final destination = _destinationController.text.isNotEmpty
+                                ? _destinationController.text
+                                : 'Chuyến đi không tên'; // Sửa tên mặc định ở đây
+                            final durationMinutes = int.tryParse(_timeController.text) ?? 15;
+                            final now = DateTime.now();
+
+                            final trip = Trip(
+                              name: destination,
+                              startedAt: now,
+                              expectedEndTime: now.add(Duration(minutes: durationMinutes)),
+                              status: 'Active',
+                            );
+                            _tripBloc.add(AddTripEvent(trip));
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF8A76F3),
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(25),
                             ),
-                          ],
+                            elevation: 5,
+                          ),
+                          child: const Text(
+                            'Bắt đầu Giám sát',
+                            style: TextStyle(
+                                fontSize: 18,
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold),
+                          ),
                         ),
-                      ),
-                    _buildDestinationCard(),
-                    const SizedBox(height: 20),
-                    _buildTimeCard(),
-                    const SizedBox(height: 20),
-                    _buildInfoCard(),
-                    const SizedBox(height: 32),
-                    ElevatedButton(
-                      onPressed: _hasActiveTip
-                          ? null
-                          : () async {
-                              final destination = _destinationController.text.isNotEmpty
-                                  ? _destinationController.text
-                                  : 'Chuyến đi';
-                              
-                              // Lấy vị trí hiện tại
-                              final location = await LocationService.getCurrentLocation();
-                              
-                              final trip = Trip(
-                                name: destination,
-                                startedAt: DateTime.now(),
-                                status: 'Đang tiến hành',
-                                lastLocation: location,
-                              );
-                              _tripBloc.add(AddTripEvent(trip));
-                            },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF8A76F3),
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(25),
-                        ),
-                        elevation: 5,
-                      ),
-                      child: const Text(
-                        'Bắt đầu Giám sát',
-                        style: TextStyle(
-                            fontSize: 18,
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold),
-                      ),
+                      ],
                     ),
-                  ],
-                ), 
+                  ),
+                ),
               ),
-            ],
-          ),
-        ),
       ),
-    )
     );
   }
 

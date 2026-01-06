@@ -1,20 +1,14 @@
 import 'package:flutter/material.dart';
-import 'emergency_dialog.dart';
 
 class EmergencyButton extends StatelessWidget {
-  const EmergencyButton({super.key});
+  final VoidCallback? onPressed;
+
+  const EmergencyButton({super.key, this.onPressed});
 
   @override
   Widget build(BuildContext context) {
     return InkWell(
-      onTap: () {
-        showDialog(
-          context: context,
-          builder: (BuildContext context) {
-            return const EmergencyDialog();
-          },
-        );
-      },
+      onTap: onPressed, // Sử dụng callback được truyền vào
       borderRadius: BorderRadius.circular(20),
       child: Container(
         width: double.infinity,

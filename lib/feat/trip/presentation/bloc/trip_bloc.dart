@@ -19,9 +19,9 @@ class TripBloc extends Bloc<TripEvent, TripState> {
 
     on<AddTripEvent>((event, emit) async {
       try {
-        final id = await repository.addTrip(event.trip);
-        emit(TripAddedSuccess('Đã tạo chuyến đi (id: $id)'));
-        add(LoadTripsEvent());
+        final tripId = await repository.addTrip(event.trip);
+        emit(TripAddedSuccess(message: 'Đã tạo chuyến đi', tripId: tripId));
+
       } catch (e) {
         emit(TripError('Lỗi khi thêm chuyến đi: ${e.toString()}'));
       }

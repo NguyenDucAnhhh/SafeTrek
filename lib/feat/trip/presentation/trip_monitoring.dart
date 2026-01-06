@@ -10,50 +10,128 @@ import 'package:safetrek_project/feat/trip/data/services/location_service.dart';
 
 class TripMonitoring extends StatefulWidget {
   final int durationInMinutes;
+  final String tripId;
 
-  const TripMonitoring({super.key, required this.durationInMinutes});
+  const TripMonitoring({
+    super.key,
+    required this.durationInMinutes,
+    required this.tripId,
+  });
 
   @override
   State<TripMonitoring> createState() => _TripMonitoringState();
 }
 
 class _TripMonitoringState extends State<TripMonitoring> {
-  int _selectedIndex = 0;
-  late Timer _timer;
+  late Timer _countdownTimer;
+  late Timer _locationTimer;
   late Duration _remainingTime;
 
   @override
   void initState() {
     super.initState();
     _remainingTime = Duration(minutes: widget.durationInMinutes);
-    _startTimer();
+    _startCountdownTimer();
+    _startLocationTracking();
   }
 
-  void _startTimer() {
-    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (_remainingTime.inSeconds == 0) {
+  void _startCountdownTimer() {
+    _countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (_remainingTime.inSeconds <= 0) {
         timer.cancel();
-        // TODO: Handle auto-sending alert when timer finishes
-      } else {
-        if (mounted) {
-          setState(() {
-            _remainingTime = _remainingTime - const Duration(seconds: 1);
-          });
-        }
+        _triggerAlert('Timeout');
+      } else if (mounted) {
+        setState(() {
+          _remainingTime -= const Duration(seconds: 1);
+        });
       }
     });
   }
 
-  @override
-  void dispose() {
-    _timer.cancel();
-    super.dispose();
+  void _startLocationTracking() {
+    _locationTimer = Timer.periodic(const Duration(seconds: 30), (timer) {
+      _recordLocation();
+    });
   }
 
-  void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
+  Future<void> _recordLocation() async {
+    try {
+      final location = await LocationService.getCurrentLocation();
+      if (location == null) {
+        debugPrint("[SafeTrek] Failed to get location for history.");
+        return;
+      }
+
+      await FirebaseFirestore.instance.collection('locationHistories').add({
+        'tripId': widget.tripId,
+        'latitude': location['latitude'],
+        'longitude': location['longitude'],
+        'timestamp': FieldValue.serverTimestamp(),
+        'batteryLevel': null,
+      });
+      debugPrint("[SafeTrek] Location recorded successfully for trip ${widget.tripId}");
+    } catch (e) {
+      debugPrint("[SafeTrek] Error recording location: $e");
+    }
+  }
+
+  Future<void> _triggerAlert(String triggerMethod) async {
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        debugPrint("[SafeTrek] Cannot trigger alert: User is not logged in.");
+        return;
+      }
+
+      debugPrint("[SafeTrek] Triggering alert. Method: $triggerMethod, TripID: ${widget.tripId}");
+      final location = await LocationService.getCurrentLocation();
+
+      // Create alert log
+      await FirebaseFirestore.instance.collection('alertLogs').add({
+        'tripId': widget.tripId,
+        'userId': user.uid,
+        'triggerMethod': triggerMethod,
+        'timestamp': FieldValue.serverTimestamp(),
+        'location': location != null ? GeoPoint(location['latitude'], location['longitude']) : null,
+        'status': 'Sent',
+        'alertType': 'Push',
+      });
+
+      // FIX: Update the trip status to 'Alarmed'
+      await FirebaseFirestore.instance.collection('trips').doc(widget.tripId).update({
+        'status': 'Alarmed',
+        'actualEndTime': FieldValue.serverTimestamp(),
+        'lastLocation': location != null ? GeoPoint(location['latitude'], location['longitude']) : null,
+      });
+
+      debugPrint("[SafeTrek] Alert log created and trip status updated to Alarmed.");
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('ĐÃ GỬI CẢNH BÁO KHẨN CẤP!'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      debugPrint("[SafeTrek] Error triggering alert: $e");
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Lỗi khi gửi cảnh báo: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _countdownTimer.cancel();
+    _locationTimer.cancel();
+    super.dispose();
   }
 
   String _formatDuration(Duration duration) {
@@ -66,113 +144,74 @@ class _TripMonitoringState extends State<TripMonitoring> {
   void _showPinDialog() async {
     final enteredPin = await showDialog<String>(
       context: context,
-      barrierDismissible: false, // User must enter PIN
+      barrierDismissible: false, 
       builder: (BuildContext context) {
         return const PinInputDialog();
       },
     );
 
-    if (enteredPin != null && mounted) {
-      // Validate PIN against Firestore
-      try {
-        final uid = FirebaseAuth.instance.currentUser?.uid;
-        if (uid == null) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Lỗi: Người dùng chưa đăng nhập'),
-              backgroundColor: Colors.red,
-            ),
-          );
-          return;
-        }
+    if (enteredPin == null || !mounted) return;
 
-        final userDoc = await FirebaseFirestore.instance
-            .collection('users')
-            .doc(uid)
-            .get();
+    try {
+      final uid = FirebaseAuth.instance.currentUser?.uid;
+      if (uid == null) return;
 
-        final safePIN = userDoc.data()?['safePIN'] as String?;
-        final duressPIN = userDoc.data()?['duressPIN'] as String?;
-        String? tripStatus;
-        String messageText = '';
-        Color messageColor = Colors.red;
+      final userDoc = await FirebaseFirestore.instance.collection('users').doc(uid).get();
+      final safePIN = userDoc.data()?['safePIN'] as String?;
+      final duressPIN = userDoc.data()?['duressPIN'] as String?;
 
-        if (enteredPin == safePIN) {
-          // Safe PIN - mark as safe
-          tripStatus = 'Đã đến nơi an toàn';
-          messageText = 'Đã xác nhận đến nơi an toàn!';
-          messageColor = Colors.green;
-        } else if (enteredPin == duressPIN) {
-          // Duress PIN - mark as danger but still end trip
-          tripStatus = 'Nguy hiểm';
-          messageText = 'Đã xác nhận đến nơi an toàn!';
-          messageColor = Colors.green;
-        } else {
-          // PIN incorrect
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Mã PIN không chính xác'),
-              backgroundColor: Colors.red,
-            ),
-          );
-          return;
-        }
+      String? tripStatus;
+      String messageText = '';
+      Color messageColor = Colors.green;
+      bool isDuress = false;
 
-        // Update trip status in Firestore
-        // Get the most recent active trip without needing complex index
-        final tripsSnapshot = await FirebaseFirestore.instance
-            .collection('trips')
-            .where('userId', isEqualTo: uid)
-            .where('status', isEqualTo: 'Đang tiến hành')
-            .get();
-
-        if (tripsSnapshot.docs.isNotEmpty) {
-          // Sort by startedAt locally and get the most recent
-          final sortedDocs = tripsSnapshot.docs.toList();
-          sortedDocs.sort((a, b) {
-            final dateA = (a.data()['startedAt'] as Timestamp?)?.toDate() ?? DateTime(2000);
-            final dateB = (b.data()['startedAt'] as Timestamp?)?.toDate() ?? DateTime(2000);
-            return dateB.compareTo(dateA); // descending order
-          });
-
-          final tripId = sortedDocs.first.id;
-          
-          // Lấy vị trí cuối cùng trước khi cập nhật
-          final lastLocation = await LocationService.getCurrentLocation();
-          
-          await FirebaseFirestore.instance
-              .collection('trips')
-              .doc(tripId)
-              .update({
-                'status': tripStatus,
-                'lastLocation': lastLocation,
-              });
-        }
-
-        _timer.cancel();
+      if (enteredPin == safePIN) {
+        tripStatus = 'CompletedSafe';
+        messageText = 'Đã xác nhận đến nơi an toàn!';
+      } else if (enteredPin == duressPIN) {
+        tripStatus = 'Alarmed';
+        messageText = 'Cảnh báo ép buộc đã được gửi đi một cách bí mật.';
+        messageColor = Colors.orange;
+        isDuress = true;
+      } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(messageText),
-            backgroundColor: messageColor,
-          ),
+          const SnackBar(content: Text('Mã PIN không chính xác'), backgroundColor: Colors.red),
         );
-        Future.delayed(const Duration(seconds: 1), () {
-          if (mounted) {
-            Navigator.pushAndRemoveUntil(
-              context,
-              MaterialPageRoute(builder: (context) => const MainScreen()),
-              (route) => false, // Remove all previous routes
-            );
-          }
-        });
-      } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Lỗi: ${e.toString()}'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        return;
       }
+
+      if (isDuress) {
+        await _triggerAlert('DuressPIN');
+      } else {
+        // Only update trip manually if not duress, as _triggerAlert already handles it
+        final lastLocation = await LocationService.getCurrentLocation();
+        await FirebaseFirestore.instance.collection('trips').doc(widget.tripId).update({
+          'status': tripStatus,
+          'lastLocation': lastLocation != null ? GeoPoint(lastLocation['latitude'], lastLocation['longitude']) : null,
+          'actualEndTime': FieldValue.serverTimestamp(),
+        });
+      }
+
+      _countdownTimer.cancel();
+      _locationTimer.cancel();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(messageText), backgroundColor: messageColor),
+      );
+      
+      Future.delayed(const Duration(seconds: 1), () {
+        if (mounted) {
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (context) => const MainScreen()),
+            (route) => false,
+          );
+        }
+      });
+
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Lỗi: ${e.toString()}'), backgroundColor: Colors.red),
+      );
     }
   }
 
@@ -196,7 +235,9 @@ class _TripMonitoringState extends State<TripMonitoring> {
             children: [
               _buildTimerCard(),
               const SizedBox(height: 40),
-              const EmergencyButton(),
+              EmergencyButton(
+                onPressed: () => _triggerAlert('PanicButton'),
+              ),
               const SizedBox(height: 15),
               const Text(
                 'Nhấn nút này để gửi cảnh báo khẩn cấp ngay lập tức đến tất cả người bảo vệ của bạn',
@@ -207,7 +248,6 @@ class _TripMonitoringState extends State<TripMonitoring> {
           ),
         ),
       ),
-
     );
   }
 
@@ -257,7 +297,7 @@ class _TripMonitoringState extends State<TripMonitoring> {
             ),
             const SizedBox(height: 24),
             ElevatedButton(
-              onPressed: _showPinDialog, // Show PIN dialog on press
+              onPressed: _showPinDialog,
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF007BFF),
                 minimumSize: const Size(double.infinity, 50),
