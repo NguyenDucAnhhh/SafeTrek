@@ -194,8 +194,8 @@ class SettingView extends StatelessWidget {
                         iconColor: const Color(0xFF0B7A4A),
                         iconBgColor: const Color(0xFFDCFCE7),
                         title: 'Mã PIN An toàn',
-                        onTap: () {
-                          Navigator.push(
+                        onTap: () async {
+                          await Navigator.push(
                             context,
                             MaterialPageRoute(
                               builder: (_) => BlocProvider.value(
@@ -204,6 +204,10 @@ class SettingView extends StatelessWidget {
                               ),
                             ),
                           );
+                          // Refresh user settings after returning
+                          if (context.mounted) {
+                            context.read<SettingsBloc>().add(LoadUserSettingsEvent());
+                          }
                         },
                       ),
                       SettingCard(
@@ -211,8 +215,8 @@ class SettingView extends StatelessWidget {
                         iconColor: const Color(0xFFB91C1C),
                         iconBgColor: const Color(0xFFFFE2E2),
                         title: 'Mã PIN Bị ép buộc',
-                        onTap: () {
-                          Navigator.push(
+                        onTap: () async {
+                          await Navigator.push(
                             context,
                             MaterialPageRoute(
                               builder: (_) => BlocProvider.value(
@@ -221,6 +225,10 @@ class SettingView extends StatelessWidget {
                               ),
                             ),
                           );
+                          // Refresh user settings after returning
+                          if (context.mounted) {
+                            context.read<SettingsBloc>().add(LoadUserSettingsEvent());
+                          }
                         },
                       ),
                       SettingCard(
