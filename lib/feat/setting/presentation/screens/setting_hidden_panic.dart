@@ -4,9 +4,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:safetrek_project/feat/setting/presentation/bloc/settings_bloc.dart';
 import 'package:safetrek_project/feat/setting/presentation/bloc/settings_event.dart';
 import 'package:safetrek_project/feat/setting/presentation/bloc/settings_state.dart';
-import 'package:volume_controller/volume_controller.dart';
-
-import '../../../../core/widgets/emergency_dialog.dart';
 import '../../../../core/widgets/secondary_header.dart';
 
 enum ActivationMethod { volume, power }
@@ -144,6 +141,7 @@ class _HiddenPanicViewState extends State<HiddenPanicView> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              const SizedBox(height: 10),
               _buildHeader(),
               const SizedBox(height: 24),
               _buildToggleCard(context, state),
@@ -188,29 +186,68 @@ class _HiddenPanicViewState extends State<HiddenPanicView> {
   }
 
   Widget _buildHeader() {
-    return Row(children: [
-      Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-              color: const Color(0xFFFFE8E8),
-              borderRadius: BorderRadius.circular(12)),
-          child: const Icon(Icons.flash_on,
-              color: Color(0xFFF53E3E), size: 28)),
-      const SizedBox(width: 16),
-      const Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Nút Hoảng loạn Ẩn',
-                style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF101828))),
-            SizedBox(height: 4),
-            Text('Kích hoạt cảnh báo bí mật',
-                style: TextStyle(fontSize: 15, color: Color(0xFF6A7282)))
-          ])
-    ]);
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 12,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 46,
+                height: 46,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFE8E8),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(
+                  Icons.flash_on_outlined,
+                  color: Color(0xFFF53E3E),
+                  size: 26,
+                ),
+              ),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Nút Hoảng Loạn Ẩn',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF111827),
+                      ),
+                    ),
+                    SizedBox(height: 4),
+                    Text(
+                      'Kích hoạt cảnh báo bí mật',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Color(0xFF6A7282),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
   }
+
 
   Widget _buildToggleCard(
       BuildContext context, HiddenPanicSettingsLoaded state) {
