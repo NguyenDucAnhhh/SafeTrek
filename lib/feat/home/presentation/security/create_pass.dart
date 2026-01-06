@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:safetrek_project/core/widgets/secondary_header.dart';
 
 class CreatePassword extends StatefulWidget {
-  const CreatePassword({super.key});
+  final String email;
+  const CreatePassword({super.key, required this.email});
 
   @override
   State<CreatePassword> createState() => _CreatePasswordState();
@@ -11,6 +14,16 @@ class CreatePassword extends StatefulWidget {
 class _CreatePasswordState extends State<CreatePassword> {
   bool _isPasswordVisible = false;
   bool _isConfirmPasswordVisible = false;
+  final _passwordController = TextEditingController();
+  final _confirmController = TextEditingController();
+  bool _loading = false;
+
+  @override
+  void dispose() {
+    _passwordController.dispose();
+    _confirmController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -96,32 +109,18 @@ class _CreatePasswordState extends State<CreatePassword> {
                         ),
                         const SizedBox(height: 8),
                         TextField(
+                          controller: _passwordController,
                           obscureText: !_isPasswordVisible,
                           decoration: InputDecoration(
                             hintText: 'Mật khẩu mới (tối thiểu 6 ký tự)',
                             filled: true,
                             fillColor: const Color(0xFFF9FAFB),
                             contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
-                            ),
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE5E7EB))),
+                            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE5E7EB))),
                             suffixIcon: IconButton(
-                              icon: Icon(
-                                _isPasswordVisible
-                                    ? Icons.visibility_outlined
-                                    : Icons.visibility_off_outlined,
-                                color: Colors.grey,
-                              ),
-                              onPressed: () {
-                                setState(() {
-                                  _isPasswordVisible = !_isPasswordVisible;
-                                });
-                              },
+                              icon: Icon(_isPasswordVisible ? Icons.visibility_outlined : Icons.visibility_off_outlined, color: Colors.grey),
+                              onPressed: () => setState(() => _isPasswordVisible = !_isPasswordVisible),
                             ),
                           ),
                         ),
@@ -141,32 +140,18 @@ class _CreatePasswordState extends State<CreatePassword> {
                         ),
                         const SizedBox(height: 8),
                         TextField(
+                          controller: _confirmController,
                           obscureText: !_isConfirmPasswordVisible,
                           decoration: InputDecoration(
                             hintText: 'Nhập lại mật khẩu mới',
                             filled: true,
                             fillColor: const Color(0xFFF9FAFB),
                             contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
-                            ),
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE5E7EB))),
+                            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE5E7EB))),
                             suffixIcon: IconButton(
-                              icon: Icon(
-                                _isConfirmPasswordVisible
-                                    ? Icons.visibility_outlined
-                                    : Icons.visibility_off_outlined,
-                                color: Colors.grey,
-                              ),
-                              onPressed: () {
-                                setState(() {
-                                  _isConfirmPasswordVisible = !_isConfirmPasswordVisible;
-                                });
-                              },
+                              icon: Icon(_isConfirmPasswordVisible ? Icons.visibility_outlined : Icons.visibility_off_outlined, color: Colors.grey),
+                              onPressed: () => setState(() => _isConfirmPasswordVisible = !_isConfirmPasswordVisible),
                             ),
                           ),
                         ),
@@ -176,7 +161,28 @@ class _CreatePasswordState extends State<CreatePassword> {
                         SizedBox(
                           width: double.infinity,
                           child: ElevatedButton(
-                            onPressed: () {},
+                            onPressed: _loading ? null : () async {
+                              final newPass = _passwordController.text.trim();
+                              final confirm = _confirmController.text.trim();
+                              if (newPass.isEmpty || newPass.length < 6) {
+                                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Mật khẩu phải có ít nhất 6 ký tự')));
+                                return;
+                              }
+                              if (newPass != confirm) {
+                                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Mật khẩu xác nhận không khớp')));
+                                return;
+                              }
+                              setState(() => _loading = true);
+                              try {
+                                await FirebaseAuth.instance.sendPasswordResetEmail(email: widget.email);
+                                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Đã gửi email đặt lại mật khẩu. Vui lòng kiểm tra hộp thư')));
+                                Navigator.of(context).popUntil((route) => route.isFirst);
+                              } catch (e) {
+                                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Lỗi: $e')));
+                              } finally {
+                                if (mounted) setState(() => _loading = false);
+                              }
+                            },
                             style: ElevatedButton.styleFrom(
                               backgroundColor: const Color(0xFF1877F2),
                               padding: const EdgeInsets.symmetric(vertical: 16),
@@ -186,14 +192,7 @@ class _CreatePasswordState extends State<CreatePassword> {
                               elevation: 2,
                               shadowColor: const Color(0xFF1877F2).withOpacity(0.5),
                             ),
-                            child: const Text(
-                              'Cập nhật',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                              ),
-                            ),
+                            child: _loading ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)) : const Text('Cập nhật', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
                           ),
                         ),
                         const SizedBox(height: 24),
