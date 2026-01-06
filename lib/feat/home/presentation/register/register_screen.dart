@@ -1,5 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:safetrek_project/core/widgets/app_bar.dart';
+import 'package:safetrek_project/feat/auth/presentation/bloc/auth_bloc.dart';
+import 'package:safetrek_project/feat/auth/presentation/bloc/auth_event.dart';
+import 'package:safetrek_project/feat/auth/presentation/bloc/auth_state.dart';
+import '../main_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -14,6 +20,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
   // State for Step 2 password visibility
   bool _isPasswordVisible = false;
   bool _isConfirmPasswordVisible = false;
+  // Controllers
+  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _phoneController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _confirmPasswordController = TextEditingController();
+  final TextEditingController _pinController = TextEditingController();
+  final TextEditingController _duressPinController = TextEditingController();
 
   void _nextStep() {
     setState(() {
@@ -25,6 +39,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
     setState(() {
       _currentStep = 1;
     });
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _emailController.dispose();
+    _phoneController.dispose();
+    _passwordController.dispose();
+    _confirmPasswordController.dispose();
+    _pinController.dispose();
+    _duressPinController.dispose();
+    super.dispose();
   }
 
   @override
@@ -44,16 +70,28 @@ class _RegisterScreenState extends State<RegisterScreen> {
         child: SafeArea(
           child: SingleChildScrollView(
             padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 20.0),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                _buildProgressIndicator(),
-                const SizedBox(height: 20),
-                _currentStep == 1 ? _buildStep1Form() : _buildStep2Form(),
-                const SizedBox(height: 24),
-                _buildFooter(),
-              ],
+            child: BlocListener<AuthBloc, AuthState>(
+              listener: (context, state) {
+                if (state is AuthFailure) {
+                  ScaffoldMessenger.of(context)
+                    ..hideCurrentSnackBar()
+                    ..showSnackBar(SnackBar(content: Text(state.message)));
+                }
+                if (state is Authenticated) {
+                  Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => const MainScreen()));
+                }
+              },
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _buildProgressIndicator(),
+                  const SizedBox(height: 20),
+                  _currentStep == 1 ? _buildStep1Form() : _buildStep2Form(),
+                  const SizedBox(height: 24),
+                  _buildFooter(),
+                ],
+              ),
             ),
           ),
         ),
@@ -140,20 +178,23 @@ class _RegisterScreenState extends State<RegisterScreen> {
             const SizedBox(height: 8),
             Text('Nhập thông tin của bạn để tạo tài khoản', style: TextStyle(fontSize: 14, color: Colors.grey[600])),
             const SizedBox(height: 24),
-            const _TextFieldWithIcon(
+            _TextFieldWithIcon(
+              controller: _nameController,
               icon: Icons.person_outline,
               label: 'Họ và tên',
               hint: 'Nguyễn Văn A',
             ),
             const SizedBox(height: 16),
-            const _TextFieldWithIcon(
+            _TextFieldWithIcon(
+              controller: _emailController,
               icon: Icons.email_outlined,
               label: 'Email',
               hint: 'your.email@example.com',
               keyboardType: TextInputType.emailAddress,
             ),
             const SizedBox(height: 16),
-            const _TextFieldWithIcon(
+            _TextFieldWithIcon(
+              controller: _phoneController,
               icon: Icons.phone_outlined,
               label: 'Số điện thoại',
               hint: '0901234567',
@@ -208,6 +249,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
             const Text('Mật khẩu', style: TextStyle(fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
             TextField(
+              controller: _passwordController,
               obscureText: !_isPasswordVisible,
               decoration: _buildInputDecoration(
                 hintText: 'Ít nhất 6 ký tự',
@@ -219,6 +261,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
             const Text('Xác nhận mật khẩu', style: TextStyle(fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
             TextField(
+              controller: _confirmPasswordController,
               obscureText: !_isConfirmPasswordVisible,
               decoration: _buildInputDecoration(
                 hintText: 'Nhập lại mật khẩu',
@@ -229,12 +272,26 @@ class _RegisterScreenState extends State<RegisterScreen> {
             const SizedBox(height: 16),
             const Text('Mã PIN an toàn (4 chữ số)', style: TextStyle(fontWeight: FontWeight.bold)),
             const SizedBox(height: 4),
-            TextField(decoration: _buildInputDecoration(hintText: '••••')),
+            TextField(
+              controller: _pinController,
+              obscureText: true,
+              keyboardType: TextInputType.number,
+              maxLength: 4,
+              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+              decoration: _buildInputDecoration(hintText: '••••').copyWith(counterText: ""),
+            ),
             const Text('Dùng để tắt cảnh báo và kết thúc chuyến đi an toàn', style: TextStyle(color: Colors.grey, fontSize: 12)),
             const SizedBox(height: 16),
             const Text('Mã PIN bị ép buộc (4 chữ số)', style: TextStyle(fontWeight: FontWeight.bold)),
             const SizedBox(height: 4),
-            TextField(decoration: _buildInputDecoration(hintText: '••••')),
+            TextField(
+              controller: _duressPinController,
+              obscureText: true,
+              keyboardType: TextInputType.number,
+              maxLength: 4,
+              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+              decoration: _buildInputDecoration(hintText: '••••').copyWith(counterText: ""),
+            ),
             const SizedBox(height: 8),
             Container(
               padding: const EdgeInsets.all(12),
@@ -273,7 +330,41 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 const SizedBox(width: 16),
                 Expanded(
                   child: ElevatedButton(
-                    onPressed: () { /* TODO: Handle registration completion */ },
+                    onPressed: () {
+                      final name = _nameController.text.trim();
+                      final email = _emailController.text.trim();
+                      final phone = _phoneController.text.trim();
+                      final password = _passwordController.text;
+                      final confirm = _confirmPasswordController.text;
+                      final pin = _pinController.text;
+                      final duressPin = _duressPinController.text;
+
+                      if (name.isEmpty || email.isEmpty || password.isEmpty || pin.isEmpty || duressPin.isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Vui lòng điền đủ thông tin')));
+                        return;
+                      }
+                      if (password.length < 6) {
+                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Mật khẩu phải có ít nhất 6 ký tự')));
+                        return;
+                      }
+                      if (password != confirm) {
+                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Mật khẩu xác nhận không khớp')));
+                        return;
+                      }
+                      if (pin.length != 4 || duressPin.length != 4) {
+                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Mã PIN phải có đúng 4 chữ số')));
+                        return;
+                      }
+
+                      final additional = <String, dynamic>{
+                        'name': name,
+                        'phone': phone,
+                        'safePIN': pin,
+                        'duressPIN': duressPin,
+                      };
+
+                      context.read<AuthBloc>().add(SignUpRequested(email: email, password: password, additionalData: additional));
+                    },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF1877F2),
                       padding: const EdgeInsets.symmetric(vertical: 16),
@@ -342,8 +433,10 @@ class _TextFieldWithIcon extends StatelessWidget {
   final String label;
   final String hint;
   final TextInputType? keyboardType;
+  final TextEditingController? controller;
 
   const _TextFieldWithIcon({
+    this.controller,
     required this.icon,
     required this.label,
     required this.hint,
@@ -364,6 +457,7 @@ class _TextFieldWithIcon extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         TextField(
+          controller: controller,
           decoration: InputDecoration(
             hintText: hint,
             filled: true,

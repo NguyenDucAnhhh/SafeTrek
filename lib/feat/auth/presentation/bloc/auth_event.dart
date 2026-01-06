@@ -21,11 +21,12 @@ class SignInRequested extends AuthEvent {
 class SignUpRequested extends AuthEvent {
   final String email;
   final String password;
+  final Map<String, dynamic>? additionalData; // ex: name, phone, etc.
 
-  const SignUpRequested({required this.email, required this.password});
+  const SignUpRequested({required this.email, required this.password, this.additionalData});
 
   @override
-  List<Object> get props => [email, password];
+  List<Object?> get props => [email, password, additionalData];
 }
 
 class SignOutRequested extends AuthEvent {}

@@ -4,12 +4,13 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:safetrek_project/feat/auth/domain/repository/auth_repository.dart';
 import 'auth_event.dart';
 import 'auth_state.dart';
+import '../../domain/usecases/register_user.dart';
 
 class AuthBloc extends Bloc<AuthEvent, AuthState> {
   final AuthRepository _authRepository;
+  final RegisterUser _registerUser;
   StreamSubscription<User?>? _userSubscription;
-
-  AuthBloc({required AuthRepository authRepository}) : _authRepository = authRepository, super(AuthInitial()) {
+  AuthBloc({required AuthRepository authRepository, required RegisterUser registerUser}) : _authRepository = authRepository, _registerUser = registerUser, super(AuthInitial()) {
     on<SignInRequested>(_onSignInRequested);
     on<SignUpRequested>(_onSignUpRequested);
     on<SignOutRequested>(_onSignOutRequested);
@@ -32,7 +33,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   Future<void> _onSignUpRequested(SignUpRequested event, Emitter<AuthState> emit) async {
     emit(AuthLoading());
     try {
-      await _authRepository.signUpWithEmailAndPassword(email: event.email, password: event.password);
+      await _registerUser.call(event.email, event.password, event.additionalData);
     } catch (e) {
       emit(AuthFailure(e.toString()));
     }
