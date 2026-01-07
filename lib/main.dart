@@ -22,6 +22,11 @@ import 'feat/setting/data/repository/setting_repository_impl.dart';
 import 'feat/setting/presentation/bloc/settings_bloc.dart';
 import 'panic/panic_listener.dart';
 
+// GUARDIANS
+import 'feat/guardians/domain/repository/guardian_repository.dart';
+import 'feat/guardians/data/repository/guardian_repository_impl.dart';
+import 'feat/guardians/data/data_source/guardian_remote_data_source.dart';
+
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 void main() async {
@@ -48,6 +53,10 @@ void main() async {
     localDataSource: settingsLocalDataSource,
   );
 
+  // ================= GUARDIANS DATA =================
+  final guardianRemoteDataSource = GuardianRemoteDataSource(FirebaseFirestore.instance);
+  final guardianRepository = GuardianRepositoryImpl(guardianRemoteDataSource);
+
   runApp(
     MultiRepositoryProvider(
       providers: [
@@ -56,6 +65,9 @@ void main() async {
         ),
         RepositoryProvider<SettingsRepository>(
           create: (_) => settingsRepository,
+        ),
+        RepositoryProvider<GuardianRepository>(
+          create: (_) => guardianRepository,
         ),
       ],
       child: const MyApp(),

@@ -1,12 +1,21 @@
 import 'package:flutter/material.dart';
 
 class EmergencyDialog extends StatelessWidget {
-  // ✅ THÊM MỚI: Khai báo callback để báo cho trang cha biết dialog đã đóng
   final VoidCallback? onDismiss;
+  final String? time;
+  final String? location;
+  final String? battery;
+
+  // Add a boolean parameter to indicate if it's shown as an overlay
+  final bool isOverlay;
 
   const EmergencyDialog({
     super.key,
-    this.onDismiss, // ✅ THÊM MỚI: Đưa vào constructor
+    this.onDismiss,
+    this.time,
+    this.location,
+    this.battery,
+    this.isOverlay = false, // Default is false (standard dialog)
   });
 
   @override
@@ -59,18 +68,20 @@ class EmergencyDialog extends StatelessWidget {
               ),
               InkWell(
                 onTap: () {
-                  // ✅ THÊM MỚI: Gọi callback trước khi pop
                   onDismiss?.call();
-                  Navigator.of(context).pop();
+                  // Only pop if NOT an overlay (or handle it differently)
+                  if (!isOverlay) {
+                    Navigator.of(context).pop();
+                  }
                 },
                 child: const Icon(Icons.close, color: Colors.white),
               ),
             ],
           ),
           const SizedBox(height: 15),
-          const Text(
-            "Nút hoảng loạn đã được kích hoạt!\n\nCảnh báo đã được gửi đến 1 người bảo vệ.\n\nThời gian: 23:38:55 8/12/2025",
-            style: TextStyle(
+          Text(
+            "Nút hoảng loạn đã được kích hoạt!\n\nCảnh báo đã được gửi đến người bảo vệ.\n\nThời gian: ${time ?? 'N/A'}",
+            style: const TextStyle(
               fontSize: 14,
               color: Colors.white,
             ),
@@ -96,9 +107,9 @@ class EmergencyDialog extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 4),
-                const Text(
-                  "21.028500, 105.854200",
-                  style: TextStyle(
+                Text(
+                  location ?? 'Không xác định',
+                  style: const TextStyle(
                     color: Colors.white,
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
@@ -107,13 +118,13 @@ class EmergencyDialog extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 10),
-                const Row(
+                Row(
                   children: [
-                    Icon(Icons.battery_full, color: Colors.white, size: 16),
-                    SizedBox(width: 8),
+                    const Icon(Icons.battery_full, color: Colors.white, size: 16),
+                    const SizedBox(width: 8),
                     Text(
-                      "Mức pin: 83%",
-                      style: TextStyle(color: Colors.white, fontSize: 13),
+                      "Mức pin: ${battery ?? 'N/A'}",
+                      style: const TextStyle(color: Colors.white, fontSize: 13),
                     ),
                   ],
                 ),
@@ -126,9 +137,10 @@ class EmergencyDialog extends StatelessWidget {
             children: <Widget>[
               ElevatedButton(
                 onPressed: () {
-                  // ✅ THÊM MỚI: Gọi callback trước khi pop
                   onDismiss?.call();
-                  Navigator.of(context).pop();
+                  if (!isOverlay) {
+                    Navigator.of(context).pop();
+                  }
                 },
                 style: ElevatedButton.styleFrom(
                   foregroundColor: Colors.black,
@@ -143,9 +155,10 @@ class EmergencyDialog extends StatelessWidget {
               const SizedBox(width: 10),
               ElevatedButton(
                 onPressed: () {
-                  // ✅ THÊM MỚI: Gọi callback trước khi pop
                   onDismiss?.call();
-                  Navigator.of(context).pop();
+                  if (!isOverlay) {
+                    Navigator.of(context).pop();
+                  }
                 },
                 style: ElevatedButton.styleFrom(
                   foregroundColor: Colors.black,
