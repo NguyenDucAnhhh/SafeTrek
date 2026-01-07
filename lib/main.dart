@@ -13,6 +13,9 @@ import 'firebase_options.dart';
 import 'feat/auth/data/repository/auth_repository_impl.dart';
 import 'feat/auth/domain/repository/auth_repository.dart';
 import 'feat/auth/presentation/bloc/auth_bloc.dart';
+import 'feat/auth/domain/usecases/register_user.dart';
+import 'feat/auth/domain/repository/user_repository.dart';
+import 'feat/auth/data/repository/user_repository_impl.dart';
 
 // SETTINGS
 import 'feat/setting/domain/repository/settings_repository.dart';
@@ -63,6 +66,9 @@ void main() async {
         RepositoryProvider<AuthRepository>(
           create: (_) => AuthRepositoryImpl(FirebaseAuth.instance),
         ),
+        RepositoryProvider<UserRepository>(
+          create: (_) => UserRepositoryImpl(FirebaseFirestore.instance),
+        ),
         RepositoryProvider<SettingsRepository>(
           create: (_) => settingsRepository,
         ),
@@ -85,6 +91,7 @@ class MyApp extends StatelessWidget {
         BlocProvider<AuthBloc>(
           create: (context) => AuthBloc(
             authRepository: context.read<AuthRepository>(),
+            registerUser: RegisterUser(context.read<AuthRepository>(), context.read<UserRepository>()),
           ),
         ),
         // ✅ CUNG CẤP SETTINGSBLOC Ở ĐÂY ĐỂ DÙNG TOÀN APP
