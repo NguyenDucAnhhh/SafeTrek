@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:volume_controller/volume_controller.dart';
 
@@ -21,6 +22,10 @@ class _PanicListenerState extends State<PanicListener> {
   DateTime? _lastPressTime;
   DateTime? _lastEventTime;
 
+  // ===== Power Button =====
+  StreamSubscription? _powerSubscription;
+  static const _powerChannel = EventChannel('com.example.safetrek_project/power_button');
+
   // ===== Overlay =====
   bool _showOverlay = false;
 
@@ -37,12 +42,20 @@ class _PanicListenerState extends State<PanicListener> {
     VolumeController().showSystemUI = false;
 
     VolumeController().listener(_handleVolumeEvent);
+
+    // Lắng nghe sự kiện nút nguồn (Screen ON/OFF)
+    _powerSubscription = _powerChannel.receiveBroadcastStream().listen(
+      _handlePowerEvent,
+      onError: (dynamic error) {
+        debugPrint('Power Button Channel Error: $error');
+      },
+    );
+
     _updateSettingsFromBloc();
   }
 
-  // ================== HANDLE VOLUME ==================
-  void _handleVolumeEvent(double volume) {
-    if (!_isEnabled || _method != 'volume') return;
+  // ================== HANDLE EVENT ==================
+  void _registerPress() {
     if (_showOverlay) return;
 
     final now = DateTime.now();
@@ -64,19 +77,32 @@ class _PanicListenerState extends State<PanicListener> {
     _lastPressTime = now;
 
     debugPrint(
-        "🔥 Panic Count: $_currentPressCount / $_requiredPresses");
+        "🔥 Panic Count: $_currentPressCount / $_requiredPresses (Method: $_method)");
 
     if (_currentPressCount >= _requiredPresses) {
       _triggerEmergency();
     }
   }
 
+  void _handleVolumeEvent(double volume) {
+    if (!_isEnabled || _method != 'volume') return;
+    _registerPress();
+  }
+
+  void _handlePowerEvent(dynamic event) {
+    if (!_isEnabled || _method != 'power') return;
+    // event là 'android.intent.action.SCREEN_OFF' hoặc 'ON'
+    _registerPress();
+  }
+
   // ================== EMERGENCY ==================
   void _triggerEmergency() {
     debugPrint("🚨 KÍCH HOẠT PANIC!");
 
-    // 👉 Reset volume 1 LẦN DUY NHẤT khi panic
-    VolumeController().setVolume(0.5);
+    if (_method == 'volume') {
+      // 👉 Reset volume 1 LẦN DUY NHẤT khi panic
+      VolumeController().setVolume(0.5);
+    }
 
     if (!mounted) return;
 
@@ -112,6 +138,7 @@ class _PanicListenerState extends State<PanicListener> {
   @override
   void dispose() {
     VolumeController().removeListener();
+    _powerSubscription?.cancel();
     super.dispose();
   }
 

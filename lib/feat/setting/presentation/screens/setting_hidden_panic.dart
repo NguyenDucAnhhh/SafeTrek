@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:safetrek_project/feat/setting/presentation/bloc/settings_bloc.dart';
@@ -28,77 +27,6 @@ class HiddenPanicView extends StatefulWidget {
 }
 
 class _HiddenPanicViewState extends State<HiddenPanicView> {
-  // int _pressCount = 0;
-  // Timer? _resetTimer;
-  // DateTime? _lastPressTime;
-  //
-  // DateTime? _lastAcceptedPressTime;
-  // bool _isDialogShowing = false;
-  // bool _ignoreFirstVolumeEvent = true;
-
-  // @override
-  // void initState() {
-  //   super.initState();
-  //
-  //   VolumeController().listener((volume) {
-  //     if (_ignoreFirstVolumeEvent) {
-  //       _ignoreFirstVolumeEvent = false;
-  //       return;
-  //     }
-  //
-  //     final state = context.read<SettingsBloc>().state;
-  //
-  //     if (state is HiddenPanicSettingsLoaded &&
-  //         state.isEnabled &&
-  //         state.method == 'volume') {
-  //       _handleVolumePress(state.pressCount);
-  //     }
-  //   });
-  // }
-  //
-  // void _handleVolumePress(int requiredPresses) {
-  //   final now = DateTime.now();
-  //
-  //   // 🔒 1 LẦN BẤM = 1 CALLBACK (CHẶN SPAM)
-  //   if (_lastAcceptedPressTime != null &&
-  //       now.difference(_lastAcceptedPressTime!) <
-  //           const Duration(milliseconds: 400)) {
-  //     return;
-  //   }
-  //   _lastAcceptedPressTime = now;
-  //
-  //   // ⏱ reset nếu ngắt quãng > 2s
-  //   if (_lastPressTime == null ||
-  //       now.difference(_lastPressTime!) > const Duration(seconds: 2)) {
-  //     _pressCount = 1;
-  //   } else {
-  //     _pressCount++;
-  //   }
-  //
-  //   _lastPressTime = now;
-  //
-  //   if (_pressCount == requiredPresses && !_isDialogShowing) {
-  //     _isDialogShowing = true;
-  //     _pressCount = 0;
-  //
-  //     showDialog(
-  //       context: context,
-  //       barrierDismissible: false,
-  //       builder: (_) => const EmergencyDialog(),
-  //     ).then((_) {
-  //       Future.delayed(const Duration(seconds: 2), () {
-  //         _isDialogShowing = false;
-  //       });
-  //     });
-  //   }
-  // }
-  //
-  // @override
-  // void dispose() {
-  //   VolumeController().removeListener();
-  //   _resetTimer?.cancel();
-  //   super.dispose();
-  // }
 
   void _saveSettings(BuildContext context, {
     required bool isEnabled,
