@@ -8,23 +8,30 @@ class TripModel extends Trip {
     this.id,
     required String name,
     required DateTime startedAt,
+    required DateTime expectedEndTime,
     String? status,
     Map<String, dynamic>? lastLocation,
   }) : super(
-    name: name,
-    startedAt: startedAt,
-    status: status,
-    lastLocation: lastLocation,
-  );
+          name: name,
+          startedAt: startedAt,
+          expectedEndTime: expectedEndTime,
+          status: status,
+          lastLocation: lastLocation,
+        );
 
-  factory TripModel.fromFirestore(QueryDocumentSnapshot doc) {
+  factory TripModel.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
+    final geoPoint = data['lastLocation'] as GeoPoint?;
+
     return TripModel(
       id: doc.id,
       name: data['name'] as String? ?? '',
       startedAt: (data['startedAt'] as Timestamp).toDate(),
+      expectedEndTime: (data['expectedEndTime'] as Timestamp).toDate(),
       status: data['status'] as String?,
-      lastLocation: data['lastLocation'] as Map<String, dynamic>?,
+      lastLocation: geoPoint != null
+          ? {'latitude': geoPoint.latitude, 'longitude': geoPoint.longitude}
+          : null,
     );
   }
 
@@ -32,8 +39,11 @@ class TripModel extends Trip {
     return {
       'name': name,
       'startedAt': Timestamp.fromDate(startedAt),
+      'expectedEndTime': Timestamp.fromDate(expectedEndTime),
       'status': status,
-      'lastLocation': lastLocation,
+      'lastLocation': lastLocation != null
+          ? GeoPoint(lastLocation!['latitude'], lastLocation!['longitude'])
+          : null,
     };
   }
 }

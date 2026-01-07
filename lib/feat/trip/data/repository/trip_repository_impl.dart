@@ -15,19 +15,51 @@ class TripRepositoryImpl implements TripRepository {
     return uid;
   }
 
+  // Note: trip statuses are stored in Vietnamese in Firestore.
+
   @override
   Future<List<Trip>> getTrips() async {
     final uid = _getUidOrThrow();
     final models = await remoteDataSource.getTrips(uid);
     return models
-        .map((m) => Trip(name: m.name, startedAt: m.startedAt, status: m.status))
-        .toList();
+      .map((m) => Trip(
+          name: m.name,
+          startedAt: m.startedAt,
+          expectedEndTime: m.expectedEndTime,
+          status: m.status, // stored in Vietnamese
+          lastLocation: m.lastLocation,
+        ))
+      .toList();
   }
 
   @override
   Future<String> addTrip(Trip trip) async {
     final uid = _getUidOrThrow();
-    final model = TripModel(name: trip.name, startedAt: trip.startedAt, status: trip.status);
+    // Khi thêm chuyến đi, lưu trạng thái bằng tiếng Việt
+    String statusToSave;
+    switch (trip.status) {
+      case 'Active':
+      case 'Đang tiến hành':
+        statusToSave = 'Đang tiến hành';
+        break;
+      case 'Alarmed':
+      case 'Báo động':
+        statusToSave = 'Báo động';
+        break;
+      case 'CompletedSafe':
+      case 'Kết thúc an toàn':
+        statusToSave = 'Kết thúc an toàn';
+        break;
+      default:
+        statusToSave = trip.status ?? 'Không rõ';
+    }
+    final model = TripModel(
+      name: trip.name,
+      startedAt: trip.startedAt,
+      expectedEndTime: trip.expectedEndTime,
+      status: statusToSave,
+      lastLocation: trip.lastLocation,
+    );
     return await remoteDataSource.addTrip(uid, model);
   }
 }

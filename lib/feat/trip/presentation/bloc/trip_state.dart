@@ -18,5 +18,6 @@ class TripError extends TripState {
 
 class TripAddedSuccess extends TripState {
   final String message;
-  TripAddedSuccess(this.message);
+  final String tripId;
+  TripAddedSuccess({required this.message, required this.tripId});
 }
