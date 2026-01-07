@@ -140,40 +140,47 @@ class _TripMonitoringState extends State<TripMonitoring> {
       final safePIN = userDoc.data()?['safePIN'] as String?;
       final duressPIN = userDoc.data()?['duressPIN'] as String?;
 
-      String? tripStatus;
-      String messageText = '';
-      Color messageColor = Colors.green;
-      bool isDuress = false;
+      String tripStatus;
+      String messageText;
+      Color messageColor;
 
       if (enteredPin == safePIN) {
         tripStatus = 'CompletedSafe';
         messageText = 'Đã xác nhận đến nơi an toàn!';
-      } else if (enteredPin == duressPIN) {
-        tripStatus = 'Alarmed';
-        messageText = 'Cảnh báo ép buộc đã được gửi đi một cách bí mật.';
-        messageColor = Colors.orange;
-        isDuress = true;
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Mã PIN không chính xác'), backgroundColor: Colors.red),
-        );
-        return;
-      }
-      
-      _countdownTimer.cancel();
-      _locationTimer.cancel();
+        messageColor = Colors.green;
 
-      if (isDuress) {
-        await _triggerAlert('DuressPIN');
-      } else {
+        // Hủy timer ngay
+        _countdownTimer.cancel();
+        _locationTimer.cancel();
+
+        // CẬP NHẬT NGAY LẬP TỨC
         final lastLocation = await LocationService.getCurrentLocation();
         await FirebaseFirestore.instance.collection('trips').doc(widget.tripId).update({
           'status': tripStatus,
           'lastLocation': lastLocation != null ? GeoPoint(lastLocation['latitude'], lastLocation['longitude']) : null,
           'actualEndTime': FieldValue.serverTimestamp(),
         });
+
+      } else if (enteredPin == duressPIN) {
+        tripStatus = 'Alarmed';
+        messageText = 'Cảnh báo ép buộc đã được gửi đi một cách bí mật.';
+        messageColor = Colors.orange;
+
+        // Hủy timer ngay
+        _countdownTimer.cancel();
+        _locationTimer.cancel();
+
+        // CẬP NHẬT NGAY LẬP TỨC (hàm _triggerAlert sẽ làm việc này)
+        await _triggerAlert('DuressPIN');
+
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Mã PIN không chính xác'), backgroundColor: Colors.red),
+        );
+        return;
       }
 
+      // Hiển thị thông báo và điều hướng
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(messageText), backgroundColor: messageColor),
       );
@@ -183,6 +190,7 @@ class _TripMonitoringState extends State<TripMonitoring> {
         MaterialPageRoute(builder: (context) => const MainScreen()),
         (route) => false,
       );
+
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Lỗi: ${e.toString()}'), backgroundColor: Colors.red),
