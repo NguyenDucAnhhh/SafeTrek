@@ -8,6 +8,7 @@ import 'package:safetrek_project/core/widgets/emergency_button.dart';
 import 'package:safetrek_project/core/widgets/pin_input_dialog.dart';
 import 'package:safetrek_project/feat/home/presentation/main_screen.dart';
 import 'package:safetrek_project/feat/trip/data/services/location_service.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:safetrek_project/feat/trip/presentation/trip.dart' as trip_page;
 
 class TripMonitoring extends StatefulWidget {
@@ -185,6 +186,14 @@ class _TripMonitoringState extends State<TripMonitoring> {
         'actualEndTime': FieldValue.serverTimestamp(),
         'lastLocation': location != null ? GeoPoint(location['latitude'], location['longitude']) : null,
       });
+
+      // Try to send SMS via Cloud Function to guardians
+      try {
+        final func = FirebaseFunctions.instance.httpsCallable('sendAlertSms');
+        await func.call(<String, dynamic>{'tripId': widget.tripId, 'reason': triggerMethod});
+      } catch (e) {
+        debugPrint('sendAlertSms failed: $e');
+      }
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
