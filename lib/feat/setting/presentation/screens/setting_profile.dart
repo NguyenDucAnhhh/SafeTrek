@@ -48,7 +48,7 @@ class _SettingProfileState extends State<SettingProfile> {
     Navigator.pop(context);
   }
 
-  InputDecoration _inputDecoration({required String hint}) {
+  InputDecoration _inputDecoration({required String hint, bool enabled = true}) {
     return InputDecoration(
       hintText: hint,
       contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
@@ -60,7 +60,11 @@ class _SettingProfileState extends State<SettingProfile> {
         borderRadius: BorderRadius.circular(12),
         borderSide: const BorderSide(color: Color(0xFF3B82F6)),
       ),
-      fillColor: Colors.white,
+      disabledBorder: OutlineInputBorder( // Style cho trạng thái disabled
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: Colors.grey.withOpacity(0.3)),
+      ),
+      fillColor: enabled ? Colors.white : Colors.grey.shade100, // Đổi màu nền khi disabled
       filled: true,
     );
   }
@@ -150,7 +154,8 @@ class _SettingProfileState extends State<SettingProfile> {
                               TextFormField(
                                 controller: _emailController,
                                 keyboardType: TextInputType.emailAddress,
-                                decoration: _inputDecoration(hint: 'Nhập email'),
+                                enabled: false, // Vô hiệu hóa chỉnh sửa
+                                decoration: _inputDecoration(hint: 'Nhập email', enabled: false),
                               ),
 
                               const SizedBox(height: 24),
