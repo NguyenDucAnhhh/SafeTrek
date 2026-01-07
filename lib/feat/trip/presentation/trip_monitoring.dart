@@ -57,10 +57,7 @@ class _TripMonitoringState extends State<TripMonitoring> {
   Future<void> _recordLocation() async {
     try {
       final location = await LocationService.getCurrentLocation();
-      if (location == null) {
-        debugPrint("[SafeTrek] Failed to get location for history.");
-        return;
-      }
+      if (location == null) return;
 
       await FirebaseFirestore.instance.collection('locationHistories').add({
         'tripId': widget.tripId,
@@ -69,24 +66,18 @@ class _TripMonitoringState extends State<TripMonitoring> {
         'timestamp': FieldValue.serverTimestamp(),
         'batteryLevel': null,
       });
-      debugPrint("[SafeTrek] Location recorded successfully for trip ${widget.tripId}");
     } catch (e) {
-      debugPrint("[SafeTrek] Error recording location: $e");
+      debugPrint("Error recording location: $e");
     }
   }
 
   Future<void> _triggerAlert(String triggerMethod) async {
     try {
       final user = FirebaseAuth.instance.currentUser;
-      if (user == null) {
-        debugPrint("[SafeTrek] Cannot trigger alert: User is not logged in.");
-        return;
-      }
+      if (user == null) return;
 
-      debugPrint("[SafeTrek] Triggering alert. Method: $triggerMethod, TripID: ${widget.tripId}");
       final location = await LocationService.getCurrentLocation();
 
-      // Create alert log
       await FirebaseFirestore.instance.collection('alertLogs').add({
         'tripId': widget.tripId,
         'userId': user.uid,
@@ -97,15 +88,12 @@ class _TripMonitoringState extends State<TripMonitoring> {
         'alertType': 'Push',
       });
 
-      // FIX: Update the trip status to 'Alarmed'
       await FirebaseFirestore.instance.collection('trips').doc(widget.tripId).update({
         'status': 'Alarmed',
         'actualEndTime': FieldValue.serverTimestamp(),
         'lastLocation': location != null ? GeoPoint(location['latitude'], location['longitude']) : null,
       });
 
-      debugPrint("[SafeTrek] Alert log created and trip status updated to Alarmed.");
-      
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -115,15 +103,7 @@ class _TripMonitoringState extends State<TripMonitoring> {
         );
       }
     } catch (e) {
-      debugPrint("[SafeTrek] Error triggering alert: $e");
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Lỗi khi gửi cảnh báo: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
+      debugPrint("Error triggering alert: $e");
     }
   }
 
@@ -179,11 +159,13 @@ class _TripMonitoringState extends State<TripMonitoring> {
         );
         return;
       }
+      
+      _countdownTimer.cancel();
+      _locationTimer.cancel();
 
       if (isDuress) {
         await _triggerAlert('DuressPIN');
       } else {
-        // Only update trip manually if not duress, as _triggerAlert already handles it
         final lastLocation = await LocationService.getCurrentLocation();
         await FirebaseFirestore.instance.collection('trips').doc(widget.tripId).update({
           'status': tripStatus,
@@ -192,22 +174,15 @@ class _TripMonitoringState extends State<TripMonitoring> {
         });
       }
 
-      _countdownTimer.cancel();
-      _locationTimer.cancel();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(messageText), backgroundColor: messageColor),
       );
       
-      Future.delayed(const Duration(seconds: 1), () {
-        if (mounted) {
-          Navigator.pushAndRemoveUntil(
-            context,
-            MaterialPageRoute(builder: (context) => const MainScreen()),
-            (route) => false,
-          );
-        }
-      });
-
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (context) => const MainScreen()),
+        (route) => false,
+      );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Lỗi: ${e.toString()}'), backgroundColor: Colors.red),

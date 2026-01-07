@@ -1,16 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:safetrek_project/feat/trip/data/services/location_service.dart';
 import 'package:safetrek_project/feat/trip/presentation/start_trip.dart';
 import 'package:safetrek_project/feat/trip/presentation/trip_history.dart';
 import 'package:safetrek_project/core/widgets/action_card.dart';
-import 'package:safetrek_project/core/widgets/app_bar.dart';
-import 'package:safetrek_project/core/widgets/bottom_navigation.dart';
 import 'package:safetrek_project/core/widgets/emergency_button.dart';
-import 'package:safetrek_project/feat/trip/data/data_source/trip_remote_data_source.dart';
-import 'package:safetrek_project/feat/trip/data/repository/trip_repository_impl.dart';
-import 'package:safetrek_project/feat/trip/presentation/bloc/trip_bloc.dart';
-import 'package:safetrek_project/feat/trip/presentation/bloc/trip_event.dart';
 
 class Trip extends StatefulWidget {
   const Trip({super.key});
@@ -20,11 +15,56 @@ class Trip extends StatefulWidget {
 }
 
 class _TripState extends State<Trip> {
-  int _selectedIndex = 0;
-  void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
+  bool _isSendingAlert = false;
+
+  // Hàm xử lý cho nút khẩn cấp (đã được cập nhật)
+  Future<void> _triggerInstantAlert() async {
+    if (_isSendingAlert) return; // Ngăn chặn nhấn nhiều lần
+
+    setState(() => _isSendingAlert = true);
+
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        throw Exception('Người dùng chưa đăng nhập');
+      }
+
+      // Lấy vị trí hiện tại
+      final location = await LocationService.getCurrentLocation();
+
+      // Tạo bản ghi trong alertLogs với tripId là null
+      await FirebaseFirestore.instance.collection('alertLogs').add({
+        'tripId': null, // Thay đổi ở đây: tripId được đặt là null
+        'userId': user.uid,
+        'triggerMethod': 'PanicButton',
+        'timestamp': FieldValue.serverTimestamp(),
+        'location': location != null ? GeoPoint(location['latitude'], location['longitude']) : null,
+        'status': 'Sent',
+        'alertType': 'Push', // Mặc định
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('ĐÃ GỬI CẢNH BÁO KHẨN CẤP!'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Lỗi khi gửi cảnh báo: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isSendingAlert = false);
+      }
+    }
   }
 
   @override
@@ -73,8 +113,15 @@ class _TripState extends State<Trip> {
                 },
               ),
               const SizedBox(height: 40),
-              const EmergencyButton(),
+              EmergencyButton(
+                onPressed: _triggerInstantAlert, // Nối dây hàm mới
+              ),
               const SizedBox(height: 15),
+              if (_isSendingAlert)
+                const Padding(
+                  padding: EdgeInsets.all(8.0),
+                  child: CircularProgressIndicator(),
+                ),
               const Text(
                 'Nhấn nút này để gửi cảnh báo khẩn cấp ngay lập tức đến tất cả người bảo vệ của bạn',
                 textAlign: TextAlign.center,

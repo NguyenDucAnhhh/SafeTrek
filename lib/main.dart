@@ -17,16 +17,15 @@ import 'feat/setting/domain/repository/settings_repository.dart';
 import 'feat/setting/data/datasource/setting_remote_data_source.dart';
 import 'feat/setting/data/datasource/settings_local_data_source.dart';
 import 'feat/setting/data/repository/setting_repository_impl.dart';
-import 'feat/setting/presentation/bloc/settings_bloc.dart'; // ✅ THÊM IMPORT NÀY
+import 'feat/setting/presentation/bloc/settings_bloc.dart';
 
-void main() async {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
-  // ================= SETTINGS DATA =================
   final settingsRemoteDataSource = SettingsRemoteDataSourceImpl(
     firestore: FirebaseFirestore.instance,
     auth: FirebaseAuth.instance,
@@ -66,7 +65,6 @@ class MyApp extends StatelessWidget {
             authRepository: context.read<AuthRepository>(),
           ),
         ),
-        // ✅ CUNG CẤP SETTINGSBLOC Ở ĐÂY ĐỂ DÙNG TOÀN APP
         BlocProvider<SettingsBloc>(
           create: (context) => SettingsBloc(
             context.read<SettingsRepository>(),

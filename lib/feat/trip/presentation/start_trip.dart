@@ -4,7 +4,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:safetrek_project/feat/trip/data/model/trip_model.dart';
 import 'package:safetrek_project/feat/trip/presentation/trip_monitoring.dart';
-import 'package:safetrek_project/core/widgets/app_bar.dart';
 import 'package:safetrek_project/core/widgets/secondary_header.dart';
 import 'package:safetrek_project/feat/trip/data/data_source/trip_remote_data_source.dart';
 import 'package:safetrek_project/feat/trip/data/repository/trip_repository_impl.dart';
@@ -12,6 +11,7 @@ import 'package:safetrek_project/feat/trip/domain/entity/trip.dart';
 import 'package:safetrek_project/feat/trip/presentation/bloc/trip_bloc.dart';
 import 'package:safetrek_project/feat/trip/presentation/bloc/trip_event.dart';
 import 'package:safetrek_project/feat/trip/presentation/bloc/trip_state.dart';
+import 'package:safetrek_project/feat/trip/data/services/location_service.dart';
 
 class StartTrip extends StatefulWidget {
   const StartTrip({super.key});
@@ -31,11 +31,7 @@ class _StartTripState extends State<StartTrip> {
   void initState() {
     super.initState();
     _selectedTime = 15;
-    _tripBloc = TripBloc(
-      TripRepositoryImpl(
-        TripRemoteDataSource(FirebaseFirestore.instance),
-      ),
-    );
+    _tripBloc = TripBloc(TripRepositoryImpl(TripRemoteDataSource(FirebaseFirestore.instance)));
     _checkAndResumeActiveTrip();
   }
 
@@ -147,11 +143,19 @@ class _StartTripState extends State<StartTrip> {
                         _buildInfoCard(),
                         const SizedBox(height: 32),
                         ElevatedButton(
-                          onPressed: () {
-                            if(mounted) setState(() => _isLoading = true);
+                          onPressed: () async {
+                            final location = await LocationService.getCurrentLocation();
+                            if (location == null) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('Vui lòng cấp quyền truy cập vị trí để bắt đầu.'), backgroundColor: Colors.red),
+                              );
+                              return;
+                            }
+
+                            if (mounted) setState(() => _isLoading = true);
                             final destination = _destinationController.text.isNotEmpty
                                 ? _destinationController.text
-                                : 'Chuyến đi không tên'; // Sửa tên mặc định ở đây
+                                : 'Chuyến đi không tên';
                             final durationMinutes = int.tryParse(_timeController.text) ?? 15;
                             final now = DateTime.now();
 
@@ -160,23 +164,19 @@ class _StartTripState extends State<StartTrip> {
                               startedAt: now,
                               expectedEndTime: now.add(Duration(minutes: durationMinutes)),
                               status: 'Active',
+                              lastLocation: location,
                             );
                             _tripBloc.add(AddTripEvent(trip));
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFF8A76F3),
                             padding: const EdgeInsets.symmetric(vertical: 16),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(25),
-                            ),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
                             elevation: 5,
                           ),
                           child: const Text(
                             'Bắt đầu Giám sát',
-                            style: TextStyle(
-                                fontSize: 18,
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold),
+                            style: TextStyle(fontSize: 18, color: Colors.white, fontWeight: FontWeight.bold),
                           ),
                         ),
                       ],
@@ -204,68 +204,23 @@ class _StartTripState extends State<StartTrip> {
                 SizedBox(width: 8),
                 Text(
                   'Đích đến (Tùy chọn)',
-                  style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                      color: Colors.black87),
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.black87),
                 ),
               ],
             ),
             const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _destinationController,
-                    decoration: InputDecoration(
-                      hintText: 'Ví dụ: Nhà bạn, Văn phòng...',
-                      border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
-                          borderSide: BorderSide(color: Colors.grey.shade300)),
-                      enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
-                          borderSide: BorderSide(color: Colors.grey.shade300)),
-                      focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
-                          borderSide: const BorderSide(color: Color(0xFF4B65D8))),
-                      filled: true,
-                      fillColor: Colors.grey.shade50,
-                      contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 12),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                ElevatedButton.icon(
-                  onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Tính năng này đang phát triển'),
-                        duration: Duration(seconds: 2),
-                      ),
-                    );
-                  },
-                  icon: const Icon(Icons.map_outlined, color: Colors.white),
-                  label: const Text('Bản đồ',
-                      style: TextStyle(
-                          color: Colors.white, fontWeight: FontWeight.bold)),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF4B65D8),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 12),
-                    elevation: 3,
-                  ),
-                ),
-              ],
+            TextField(
+              controller: _destinationController,
+              decoration: InputDecoration(
+                hintText: 'Ví dụ: Nhà bạn, Văn phòng...',
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: Colors.grey.shade300)),
+                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: Colors.grey.shade300)),
+                focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFF4B65D8))),
+                filled: true,
+                fillColor: Colors.grey.shade50,
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              ),
             ),
-            const SizedBox(height: 8),
-            const Text(
-              'Nhập địch đến để tăng độ chính xác của cảnh báo',
-              style: TextStyle(color: Colors.black54, fontSize: 12),
-            )
           ],
         ),
       ),
@@ -288,19 +243,14 @@ class _StartTripState extends State<StartTrip> {
                     SizedBox(width: 8),
                     Text(
                       'Thời gian dự kiến',
-                      style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                          color: Colors.black87),
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.black87),
                     ),
                   ],
                 ),
                 const SizedBox(height: 12),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [5, 10, 15, 30, 60]
-                      .map((time) => _buildTimeChip(time))
-                      .toList(),
+                  children: [5, 10, 15, 30, 60].map((time) => _buildTimeChip(time)).toList(),
                 ),
                 const SizedBox(height: 16),
                 Row(
@@ -310,29 +260,19 @@ class _StartTripState extends State<StartTrip> {
                         controller: _timeController,
                         keyboardType: TextInputType.number,
                         textAlign: TextAlign.start,
-                        style: const TextStyle(
-                            fontSize: 16, fontWeight: FontWeight.bold),
+                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                         decoration: InputDecoration(
-                          border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(10),
-                              borderSide: BorderSide(color: Colors.grey.shade300)),
-                          enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(10),
-                              borderSide: BorderSide(color: Colors.grey.shade300)),
-                          focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(10),
-                              borderSide:
-                                  const BorderSide(color: Color(0xFF4B65D8))),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: Colors.grey.shade300)),
+                          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: Colors.grey.shade300)),
+                          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFF4B65D8))),
                           filled: true,
                           fillColor: Colors.grey.shade50,
-                          contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 16, vertical: 12),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                         ),
                         onChanged: (value) {
                           int? newTime = int.tryParse(value);
                           setState(() {
-                            if (newTime != null &&
-                                [5, 10, 15, 30, 60].contains(newTime)) {
+                            if (newTime != null && [5, 10, 15, 30, 60].contains(newTime)) {
                               _selectedTime = newTime;
                             } else {
                               _selectedTime = null;
@@ -342,15 +282,9 @@ class _StartTripState extends State<StartTrip> {
                       ),
                     ),
                     const SizedBox(width: 10),
-                    const Text('phút',
-                        style: TextStyle(fontSize: 16, color: Colors.black54)),
+                    const Text('phút', style: TextStyle(fontSize: 16, color: Colors.black54)),
                   ],
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  'Ứng dụng sẽ đếm ngược từ ${_timeController.text} phút. Bạn cần check-in trước khi hết giờ.',
-                  style: const TextStyle(color: Colors.black54, fontSize: 12),
-                )
               ],
             )));
   }
@@ -372,9 +306,7 @@ class _StartTripState extends State<StartTrip> {
         ),
         child: Text(
           time.toString(),
-          style: TextStyle(
-              color: isSelected ? Colors.white : Colors.black87,
-              fontWeight: FontWeight.bold),
+          style: TextStyle(color: isSelected ? Colors.white : Colors.black87, fontWeight: FontWeight.bold),
         ),
       ),
     );
@@ -393,25 +325,18 @@ class _StartTripState extends State<StartTrip> {
         children: [
           Row(
             children: [
-              Icon(Icons.warning_amber_rounded,
-                  color: Colors.orange.shade700, size: 20),
+              Icon(Icons.warning_amber_rounded, color: Colors.orange.shade700, size: 20),
               const SizedBox(width: 8),
               Text(
                 "Sau khi bắt đầu chuyến đi:",
-                style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.orange.shade800),
+                style: TextStyle(fontWeight: FontWeight.bold, color: Colors.orange.shade800),
               ),
             ],
           ),
           const SizedBox(height: 10),
-          _buildBulletPoint(
-              "Ứng dụng sẽ theo dõi vị trí của bạn", Colors.orange.shade800),
-          _buildBulletPoint(
-              "Bạn phải check-in bằng PIN trước khi hết giờ", Colors.orange.shade800),
-          _buildBulletPoint(
-              "Nếu không check-in, cảnh báo sẽ tự động gửi đi",
-              Colors.orange.shade800),
+          _buildBulletPoint("Ứng dụng sẽ theo dõi vị trí của bạn", Colors.orange.shade800),
+          _buildBulletPoint("Bạn phải check-in bằng PIN trước khi hết giờ", Colors.orange.shade800),
+          _buildBulletPoint("Nếu không check-in, cảnh báo sẽ tự động gửi đi", Colors.orange.shade800),
         ],
       ),
     );
@@ -423,14 +348,9 @@ class _StartTripState extends State<StartTrip> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text("• ",
-              style: TextStyle(
-                  color: color, fontWeight: FontWeight.bold, fontSize: 16)),
+          Text("• ", style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 16)),
           Expanded(
-            child: Text(
-              text,
-              style: TextStyle(color: color, fontSize: 13),
-            ),
+            child: Text(text, style: TextStyle(color: color, fontSize: 13)),
           ),
         ],
       ),
