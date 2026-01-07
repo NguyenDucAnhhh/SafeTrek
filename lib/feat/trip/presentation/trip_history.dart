@@ -56,8 +56,9 @@ class _TripHistoryViewState extends State<_TripHistoryView> {
             colors: [Color(0xFFF1F4FF), Color(0xFFE2E9FF)],
           ),
         ),
-        child: Column(
-          children: [
+          child: SingleChildScrollView(
+            child: Column(
+              children: [
             const SizedBox(height: 20),
             Card(
               elevation: 2,
@@ -126,6 +127,7 @@ class _TripHistoryViewState extends State<_TripHistoryView> {
           ],
         ),
       ),
+      )
     );
   }
   
@@ -168,21 +170,17 @@ class _TripHistoryViewState extends State<_TripHistoryView> {
     Color textColor;
     
     switch (trip.status) {
-      case 'Đã đến nơi an toàn':
+      case 'Kết thúc an toàn':
         backgroundColor = Colors.green.shade100;
         textColor = Colors.green.shade800;
         break;
-      case 'Nguy hiểm':
+      case 'Báo động':
         backgroundColor = Colors.red.shade100;
         textColor = Colors.red.shade800;
         break;
       case 'Đang tiến hành':
         backgroundColor = Colors.blue.shade100;
         textColor = Colors.blue.shade800;
-        break;
-      case 'Cảnh báo':
-        backgroundColor = Colors.orange.shade100;
-        textColor = Colors.orange.shade800;
         break;
       default:
         backgroundColor = Colors.grey.shade100;

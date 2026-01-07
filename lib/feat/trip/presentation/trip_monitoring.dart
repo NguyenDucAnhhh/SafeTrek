@@ -2,11 +2,13 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:safetrek_project/core/widgets/app_bar.dart';
 import 'package:safetrek_project/core/widgets/emergency_button.dart';
 import 'package:safetrek_project/core/widgets/pin_input_dialog.dart';
 import 'package:safetrek_project/feat/home/presentation/main_screen.dart';
 import 'package:safetrek_project/feat/trip/data/services/location_service.dart';
+import 'package:safetrek_project/feat/trip/presentation/trip.dart' as trip_page;
 
 class TripMonitoring extends StatefulWidget {
   final int durationInMinutes;
@@ -26,24 +28,106 @@ class _TripMonitoringState extends State<TripMonitoring> {
   late Timer _countdownTimer;
   late Timer _locationTimer;
   late Duration _remainingTime;
+  StreamSubscription<DocumentSnapshot>? _tripStatusSubscription;
+  String? _prefsTripId;
 
   @override
   void initState() {
     super.initState();
     _remainingTime = Duration(minutes: widget.durationInMinutes);
-    _startCountdownTimer();
+    _initFromPrefsAndStart();
     _startLocationTracking();
+    _listenToTripStatus();
+  }
+
+  Future<void> _initFromPrefsAndStart() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final startTime = prefs.getInt('trip_start_time');
+      final duration = prefs.getInt('trip_duration');
+      final tripIdPref = prefs.getString('current_trip_id');
+      _prefsTripId = tripIdPref ?? widget.tripId;
+
+      if (startTime != null && duration != null) {
+        final now = DateTime.now().millisecondsSinceEpoch;
+        final elapsed = ((now - startTime) / 1000).round();
+        final remainingSec = duration - elapsed;
+        setState(() {
+          _remainingTime = Duration(seconds: remainingSec > 0 ? remainingSec : 0);
+        });
+      }
+
+      _startCountdownTimer();
+    } catch (e) {
+      _startCountdownTimer();
+    }
+  }
+
+  void _listenToTripStatus() {
+    _tripStatusSubscription = FirebaseFirestore.instance
+        .collection('trips')
+        .doc(widget.tripId)
+        .snapshots()
+        .listen((doc) {
+      final status = doc.data()?['status'] as String?;
+      if (status != null) {
+        if (status == 'Báo động') {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Chuyến đi đã báo động!'),
+                backgroundColor: Colors.red,
+              ),
+            );
+            Navigator.pushAndRemoveUntil(
+              context,
+              MaterialPageRoute(builder: (context) => const MainScreen()),
+              (route) => false,
+            );
+          }
+        } else if (status == 'Kết thúc an toàn') {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Đã xác nhận đến nơi an toàn!'),
+                backgroundColor: Colors.green,
+              ),
+            );
+            Navigator.pushAndRemoveUntil(
+              context,
+              MaterialPageRoute(builder: (context) => const MainScreen()),
+              (route) => false,
+            );
+          }
+        }
+      }
+    });
   }
 
   void _startCountdownTimer() {
-    _countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (_remainingTime.inSeconds <= 0) {
-        timer.cancel();
-        _triggerAlert('Timeout');
-      } else if (mounted) {
-        setState(() {
-          _remainingTime -= const Duration(seconds: 1);
-        });
+    _countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) async {
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        final startTime = prefs.getInt('trip_start_time');
+        final duration = prefs.getInt('trip_duration');
+        if (startTime == null || duration == null) {
+          if (mounted) setState(() => _remainingTime = Duration.zero);
+          timer.cancel();
+          return;
+        }
+        final now = DateTime.now().millisecondsSinceEpoch;
+        final elapsed = ((now - startTime) / 1000).round();
+        final remainingSec = duration - elapsed;
+        if (remainingSec <= 0) {
+          if (mounted) setState(() => _remainingTime = Duration.zero);
+          timer.cancel();
+          // Trigger alert flow (marks trip as Alarmed) when timer reaches zero
+          await _triggerAlert('Timeout');
+          return;
+        }
+        if (mounted) setState(() => _remainingTime = Duration(seconds: remainingSec));
+      } catch (e) {
+        debugPrint('Countdown error: $e');
       }
     });
   }
@@ -73,6 +157,14 @@ class _TripMonitoringState extends State<TripMonitoring> {
 
   Future<void> _triggerAlert(String triggerMethod) async {
     try {
+      // Stop UI timers immediately to avoid further countdown actions
+      try {
+        _countdownTimer.cancel();
+      } catch (_) {}
+      try {
+        _locationTimer.cancel();
+      } catch (_) {}
+
       final user = FirebaseAuth.instance.currentUser;
       if (user == null) return;
 
@@ -89,7 +181,7 @@ class _TripMonitoringState extends State<TripMonitoring> {
       });
 
       await FirebaseFirestore.instance.collection('trips').doc(widget.tripId).update({
-        'status': 'Alarmed',
+        'status': 'Báo động',
         'actualEndTime': FieldValue.serverTimestamp(),
         'lastLocation': location != null ? GeoPoint(location['latitude'], location['longitude']) : null,
       });
@@ -111,7 +203,17 @@ class _TripMonitoringState extends State<TripMonitoring> {
   void dispose() {
     _countdownTimer.cancel();
     _locationTimer.cancel();
+    _tripStatusSubscription?.cancel();
     super.dispose();
+  }
+
+  Future<bool> _onWillPop() async {
+    // When user presses back, navigate to MainScreen but keep background service running
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => const MainScreen()),
+    );
+    return false;
   }
 
   String _formatDuration(Duration duration) {
@@ -145,7 +247,7 @@ class _TripMonitoringState extends State<TripMonitoring> {
       Color messageColor;
 
       if (enteredPin == safePIN) {
-        tripStatus = 'CompletedSafe';
+        tripStatus = 'Kết thúc an toàn';
         messageText = 'Đã xác nhận đến nơi an toàn!';
         messageColor = Colors.green;
 
@@ -162,7 +264,7 @@ class _TripMonitoringState extends State<TripMonitoring> {
         });
 
       } else if (enteredPin == duressPIN) {
-        tripStatus = 'Alarmed';
+        tripStatus = 'Báo động';
         messageText = 'Cảnh báo ép buộc đã được gửi đi một cách bí mật.';
         messageColor = Colors.orange;
 
@@ -200,7 +302,9 @@ class _TripMonitoringState extends State<TripMonitoring> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return WillPopScope(
+      onWillPop: _onWillPop,
+      child: Scaffold(
       appBar: const CustomAppBar(),
       body: Container(
         height: double.infinity,
@@ -231,6 +335,7 @@ class _TripMonitoringState extends State<TripMonitoring> {
           ),
         ),
       ),
+      )
     );
   }
 

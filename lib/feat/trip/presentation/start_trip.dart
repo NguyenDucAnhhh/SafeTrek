@@ -12,6 +12,8 @@ import 'package:safetrek_project/feat/trip/presentation/bloc/trip_bloc.dart';
 import 'package:safetrek_project/feat/trip/presentation/bloc/trip_event.dart';
 import 'package:safetrek_project/feat/trip/presentation/bloc/trip_state.dart';
 import 'package:safetrek_project/feat/trip/data/services/location_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:safetrek_project/background_service.dart';
 
 class StartTrip extends StatefulWidget {
   const StartTrip({super.key});
@@ -35,6 +37,14 @@ class _StartTripState extends State<StartTrip> {
     _checkAndResumeActiveTrip();
   }
 
+  Future<void> _saveTripToPrefs(String tripId, DateTime startedAt) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('current_trip_id', tripId);
+    await prefs.setInt('trip_start_time', startedAt.millisecondsSinceEpoch);
+    final duration = int.tryParse(_timeController.text) ?? 15;
+    await prefs.setInt('trip_duration', duration * 60); // lưu duration (giây)
+  }
+
   Future<void> _checkAndResumeActiveTrip() async {
     try {
       final uid = FirebaseAuth.instance.currentUser?.uid;
@@ -43,16 +53,20 @@ class _StartTripState extends State<StartTrip> {
         return;
       }
 
-      final snapshot = await FirebaseFirestore.instance
-          .collection('trips')
-          .where('userId', isEqualTo: uid)
-          .where('status', isEqualTo: 'Active')
-          .orderBy('startedAt', descending: true)
-          .limit(1)
-          .get();
+        final querySnapshot = await FirebaseFirestore.instance
+            .collection('trips')
+            .where('userId', isEqualTo: uid)
+            .where('status', isEqualTo: 'Đang tiến hành')
+            .get();
 
-      if (snapshot.docs.isNotEmpty) {
-        final activeTripDoc = snapshot.docs.first;
+      if (querySnapshot.docs.isNotEmpty) {
+        // Firestore may require a composite index for where+orderBy; avoid by sorting client-side
+        querySnapshot.docs.sort((a, b) {
+          final aTs = (a.data()?['startedAt'] as Timestamp?)?.toDate() ?? DateTime.fromMillisecondsSinceEpoch(0);
+          final bTs = (b.data()?['startedAt'] as Timestamp?)?.toDate() ?? DateTime.fromMillisecondsSinceEpoch(0);
+          return bTs.compareTo(aTs);
+        });
+        final activeTripDoc = querySnapshot.docs.first;
         final activeTrip = TripModel.fromFirestore(activeTripDoc);
 
         final now = DateTime.now();
@@ -96,9 +110,15 @@ class _StartTripState extends State<StartTrip> {
   Widget build(BuildContext context) {
     return BlocListener<TripBloc, TripState>(
       bloc: _tripBloc,
-      listener: (context, state) {
+      listener: (context, state) async {
         if (state is TripAddedSuccess) {
           final duration = int.tryParse(_timeController.text) ?? 15;
+          // Lưu tripId và startTime vào SharedPreferences
+          await _saveTripToPrefs(state.tripId, DateTime.now());
+          // Ensure background service is running to track in background
+          try {
+            await initializeService();
+          } catch (_) {}
           Navigator.push(
             context,
             MaterialPageRoute(
@@ -153,6 +173,54 @@ class _StartTripState extends State<StartTrip> {
                             }
 
                             if (mounted) setState(() => _isLoading = true);
+
+                            // If there's an active trip persisted, resume its monitoring instead of creating a new one
+                            try {
+                              final prefs = await SharedPreferences.getInstance();
+                              final existingTripId = prefs.getString('current_trip_id');
+                              if (existingTripId != null) {
+                                final doc = await FirebaseFirestore.instance.collection('trips').doc(existingTripId).get();
+                                final data = doc.data();
+                                final status = data?['status'] as String?;
+                                if (status != null && status == 'Đang tiến hành') {
+                                  // compute remaining from expectedEndTime if available
+                                  int remainingMinutes = 0;
+                                  final ts = data?['expectedEndTime'];
+                                  if (ts is Timestamp) {
+                                    final expected = ts.toDate();
+                                    final now = DateTime.now();
+                                    final remaining = expected.isAfter(now) ? expected.difference(now) : Duration.zero;
+                                    remainingMinutes = remaining.inMinutes;
+                                  } else {
+                                    final start = prefs.getInt('trip_start_time');
+                                    final durationSec = prefs.getInt('trip_duration');
+                                    if (start != null && durationSec != null) {
+                                      final nowMs = DateTime.now().millisecondsSinceEpoch;
+                                      final elapsed = ((nowMs - start) / 1000).round();
+                                      final remainingSec = durationSec - elapsed;
+                                      remainingMinutes = remainingSec > 0 ? (remainingSec / 60).ceil() : 0;
+                                    }
+                                  }
+
+                                  // Ensure background service is running
+                                  try {
+                                    await initializeService();
+                                  } catch (_) {}
+
+                                  Navigator.pushReplacement(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => TripMonitoring(durationInMinutes: remainingMinutes, tripId: existingTripId),
+                                    ),
+                                  );
+                                  return;
+                                }
+                              }
+                            } catch (e) {
+                              debugPrint('Error checking existing trip: $e');
+                              // fall through to create a new trip
+                            }
+
                             final destination = _destinationController.text.isNotEmpty
                                 ? _destinationController.text
                                 : 'Chuyến đi không tên';
@@ -163,7 +231,7 @@ class _StartTripState extends State<StartTrip> {
                               name: destination,
                               startedAt: now,
                               expectedEndTime: now.add(Duration(minutes: durationMinutes)),
-                              status: 'Active',
+                              status: 'Đang tiến hành',
                               lastLocation: location,
                             );
                             _tripBloc.add(AddTripEvent(trip));

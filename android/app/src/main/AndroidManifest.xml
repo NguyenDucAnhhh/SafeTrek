@@ -3,6 +3,10 @@
     <!-- Permissions for location -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <!-- Required to run foreground services (notifications) -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <!-- Optional: keep CPU awake for background tasks -->
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
 
     <application
         android:label="safetrek_project"

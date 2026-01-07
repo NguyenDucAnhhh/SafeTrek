@@ -15,46 +15,49 @@ class TripRepositoryImpl implements TripRepository {
     return uid;
   }
 
-  // Hàm mới để dịch trạng thái sang tiếng Việt
-  String _translateStatus(String? status) {
-    switch (status) {
-      case 'CompletedSafe':
-        return 'Kết thúc an toàn';
-      case 'Active':
-        return 'Đang tiến hành';
-      case 'Alarmed':
-        return 'Báo động';
-      case 'Bị ép buộc': // Giữ lại để tương thích nếu có dữ liệu cũ
-        return 'Báo động (ép buộc)';
-      default:
-        return status ?? 'Không rõ';
-    }
-  }
+  // Note: trip statuses are stored in Vietnamese in Firestore.
 
   @override
   Future<List<Trip>> getTrips() async {
     final uid = _getUidOrThrow();
     final models = await remoteDataSource.getTrips(uid);
     return models
-        .map((m) => Trip(
-              name: m.name,
-              startedAt: m.startedAt,
-              expectedEndTime: m.expectedEndTime,
-              status: _translateStatus(m.status), // Gọi hàm dịch ở đây
-              lastLocation: m.lastLocation,
-            ))
-        .toList();
+      .map((m) => Trip(
+          name: m.name,
+          startedAt: m.startedAt,
+          expectedEndTime: m.expectedEndTime,
+          status: m.status, // stored in Vietnamese
+          lastLocation: m.lastLocation,
+        ))
+      .toList();
   }
 
   @override
   Future<String> addTrip(Trip trip) async {
     final uid = _getUidOrThrow();
-    // Khi thêm chuyến đi, vẫn giữ trạng thái gốc là tiếng Anh
+    // Khi thêm chuyến đi, lưu trạng thái bằng tiếng Việt
+    String statusToSave;
+    switch (trip.status) {
+      case 'Active':
+      case 'Đang tiến hành':
+        statusToSave = 'Đang tiến hành';
+        break;
+      case 'Alarmed':
+      case 'Báo động':
+        statusToSave = 'Báo động';
+        break;
+      case 'CompletedSafe':
+      case 'Kết thúc an toàn':
+        statusToSave = 'Kết thúc an toàn';
+        break;
+      default:
+        statusToSave = trip.status ?? 'Không rõ';
+    }
     final model = TripModel(
       name: trip.name,
       startedAt: trip.startedAt,
       expectedEndTime: trip.expectedEndTime,
-      status: trip.status, // Giữ nguyên trạng thái gốc (e.g., 'Active')
+      status: statusToSave,
       lastLocation: trip.lastLocation,
     );
     return await remoteDataSource.addTrip(uid, model);

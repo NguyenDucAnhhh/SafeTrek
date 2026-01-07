@@ -6,6 +6,8 @@ import 'package:safetrek_project/feat/trip/presentation/start_trip.dart';
 import 'package:safetrek_project/feat/trip/presentation/trip_history.dart';
 import 'package:safetrek_project/core/widgets/action_card.dart';
 import 'package:safetrek_project/core/widgets/emergency_button.dart';
+import 'package:safetrek_project/feat/trip/presentation/trip_monitoring.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class Trip extends StatefulWidget {
   const Trip({super.key});
@@ -15,6 +17,47 @@ class Trip extends StatefulWidget {
 }
 
 class _TripState extends State<Trip> {
+  @override
+  void initState() {
+    super.initState();
+    _checkAndResumeActiveTrip();
+  }
+
+  Future<void> _checkAndResumeActiveTrip() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+    final querySnapshot = await FirebaseFirestore.instance
+      .collection('trips')
+      .where('userId', isEqualTo: user.uid)
+      .where('status', isEqualTo: 'Đang tiến hành')
+      .get();
+    if (querySnapshot.docs.isNotEmpty) {
+      querySnapshot.docs.sort((a, b) {
+        final aTs = (a.data()?['startedAt'] as Timestamp?)?.toDate() ?? DateTime.fromMillisecondsSinceEpoch(0);
+        final bTs = (b.data()?['startedAt'] as Timestamp?)?.toDate() ?? DateTime.fromMillisecondsSinceEpoch(0);
+        return bTs.compareTo(aTs);
+      });
+      final doc = querySnapshot.docs.first;
+      final data = doc.data();
+      final tripId = doc.id;
+      final expectedEndTime = (data['expectedEndTime'] as Timestamp?)?.toDate();
+      final now = DateTime.now();
+      final remaining = expectedEndTime != null && expectedEndTime.isAfter(now)
+          ? expectedEndTime.difference(now)
+          : Duration.zero;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => TripMonitoring(
+              durationInMinutes: remaining.inMinutes,
+              tripId: tripId,
+            ),
+          ),
+        );
+      });
+    }
+  }
   bool _isSendingAlert = false;
 
   // Hàm xử lý cho nút khẩn cấp (đã được cập nhật)
