@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:safetrek_project/core/widgets/secondary_header.dart';
-import 'create_pass.dart';
 
 class Verify extends StatefulWidget {
   const Verify({super.key});
@@ -31,19 +31,34 @@ class _VerifyState extends State<Verify> {
     }
     setState(() => _loading = true);
     try {
+      // 1. Kiểm tra xem Email và Số điện thoại có khớp trong hệ thống không
       final q = await FirebaseFirestore.instance.collection('users')
         .where('email', isEqualTo: email)
         .where('phone', isEqualTo: phone)
         .limit(1)
         .get();
+
       if (q.docs.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Không tìm thấy tài khoản khớp')));
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Thông tin xác thực không chính xác')));
+        }
         return;
       }
 
-      Navigator.of(context).push(MaterialPageRoute(builder: (_) => CreatePassword(email: email)));
+      // 2. Nếu khớp, gửi email reset mật khẩu của Firebase
+      await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Yêu cầu thành công! Vui lòng kiểm tra email để đặt lại mật khẩu'))
+        );
+        // 3. Quay về màn hình Login (thường là màn hình đầu tiên)
+        Navigator.of(context).popUntil((route) => route.isFirst);
+      }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Lỗi: $e')));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Lỗi: $e')));
+      }
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -111,13 +126,14 @@ class _VerifyState extends State<Verify> {
                         ),
                         const SizedBox(height: 32),
 
-                        Align(
+                        const Align(
                           alignment: Alignment.centerLeft,
-                          child: const Text('Email đã đăng ký', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF374151))),
+                          child: Text('Email đã đăng ký', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF374151))),
                         ),
                         const SizedBox(height: 8),
                         TextField(
                           controller: _emailController,
+                          keyboardType: TextInputType.emailAddress,
                           decoration: InputDecoration(
                             hintText: 'your.email@example.com',
                             filled: true,
@@ -129,9 +145,9 @@ class _VerifyState extends State<Verify> {
                         ),
                         const SizedBox(height: 20),
 
-                        Align(
+                        const Align(
                           alignment: Alignment.centerLeft,
-                          child: const Text('Số điện thoại', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF374151))),
+                          child: Text('Số điện thoại', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF374151))),
                         ),
                         const SizedBox(height: 8),
                         TextField(
@@ -159,7 +175,9 @@ class _VerifyState extends State<Verify> {
                               elevation: 2,
                               shadowColor: const Color(0xFF1877F2).withOpacity(0.5),
                             ),
-                            child: _loading ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)) : const Text('Xác thực', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
+                            child: _loading 
+                              ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)) 
+                              : const Text('Xác thực', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
                           ),
                         ),
                         const SizedBox(height: 24),
