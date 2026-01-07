@@ -67,9 +67,9 @@ class _PanicListenerState extends State<PanicListener> {
     }
     _lastEventTime = now;
 
-    // reset nếu quá lâu
+    // reset nếu quá lâu (2 giây)
     if (_lastPressTime == null ||
-        now.difference(_lastPressTime!) > const Duration(milliseconds: 1500)) {
+        now.difference(_lastPressTime!) > const Duration(milliseconds: 2000)) {
       _currentPressCount = 1;
     } else {
       _currentPressCount++;
@@ -111,12 +111,6 @@ class _PanicListenerState extends State<PanicListener> {
       _currentPressCount = 0;
     });
 
-    // Auto hide sau 3s (tùy chỉnh)
-    Future.delayed(const Duration(seconds: 3), () {
-      if (mounted) {
-        setState(() => _showOverlay = false);
-      }
-    });
   }
 
   // ================== SETTINGS ==================
@@ -162,7 +156,14 @@ class _PanicListenerState extends State<PanicListener> {
                 child: Center(
                   child: Material(
                     color: Colors.transparent,
-                    child: const EmergencyDialog(),
+                    // ✅ Cập nhật: Truyền callback onDismiss để tắt overlay
+                    child: EmergencyDialog(
+                      onDismiss: () {
+                        setState(() {
+                          _showOverlay = false;
+                        });
+                      },
+                    ),
                   ),
                 ),
               ),
