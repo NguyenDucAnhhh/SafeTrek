@@ -9,7 +9,6 @@ import 'package:safetrek_project/feat/setting/presentation/bloc/settings_bloc.da
 import 'package:safetrek_project/feat/setting/presentation/bloc/settings_event.dart';
 import 'package:safetrek_project/feat/setting/presentation/bloc/settings_state.dart';
 import '../../../home/presentation/login/login.dart';
-import '../../../home/presentation/setting/setting_profile.dart';
 import 'setting_profile.dart';
 import 'setting_password.dart';
 import 'setting_safePIN.dart';

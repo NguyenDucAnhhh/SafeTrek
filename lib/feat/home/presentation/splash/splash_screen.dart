@@ -58,13 +58,6 @@ class _SplashScreenState extends State<SplashScreen> {
                 color: Colors.white,
               ),
             ),
-            Text(
-              'Giữ bạn an toàn trên mọi hành trình',
-              style: TextStyle(
-                fontSize: 20,
-                color: Colors.white,
-              ),
-            ),
           ],
         ),
       ),

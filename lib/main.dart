@@ -5,11 +5,14 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'feat/home/presentation/splash/splash_screen.dart';
-import 'feat/setting/presentation/bloc/settings_event.dart';
 import 'firebase_options.dart';
+import 'background_service.dart';
 
-// AUTH
+// UI
+import 'feat/home/presentation/splash/splash_screen.dart';
+import 'panic/panic_listener.dart';
+
+// ================= AUTH =================
 import 'feat/auth/data/repository/auth_repository_impl.dart';
 import 'feat/auth/domain/repository/auth_repository.dart';
 import 'feat/auth/presentation/bloc/auth_bloc.dart';
@@ -17,29 +20,33 @@ import 'feat/auth/domain/usecases/register_user.dart';
 import 'feat/auth/domain/repository/user_repository.dart';
 import 'feat/auth/data/repository/user_repository_impl.dart';
 
-// SETTINGS
+// ================= SETTINGS =================
 import 'feat/setting/domain/repository/settings_repository.dart';
 import 'feat/setting/data/datasource/setting_remote_data_source.dart';
 import 'feat/setting/data/datasource/settings_local_data_source.dart';
 import 'feat/setting/data/repository/setting_repository_impl.dart';
 import 'feat/setting/presentation/bloc/settings_bloc.dart';
-import 'panic/panic_listener.dart';
+import 'feat/setting/presentation/bloc/settings_event.dart';
 
-// GUARDIANS
+// ================= GUARDIANS =================
 import 'feat/guardians/domain/repository/guardian_repository.dart';
 import 'feat/guardians/data/repository/guardian_repository_impl.dart';
 import 'feat/guardians/data/data_source/guardian_remote_data_source.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
-void main() async {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  // 🔥 Background service
+  await initializeService();
+
+  // 🔥 Firebase
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
-  // Lấy instance của SharedPreferences
+  // 🔥 SharedPreferences
   final prefs = await SharedPreferences.getInstance();
 
   // ================= SETTINGS DATA =================
@@ -48,17 +55,20 @@ void main() async {
     auth: FirebaseAuth.instance,
   );
 
-  final settingsLocalDataSource = SettingsLocalDataSourceImpl(sharedPreferences: prefs);
+  final settingsLocalDataSource = SettingsLocalDataSourceImpl(
+    sharedPreferences: prefs,
+  );
 
-  // ================= REPOSITORIES =================
   final settingsRepository = SettingsRepositoryImpl(
     remoteDataSource: settingsRemoteDataSource,
     localDataSource: settingsLocalDataSource,
   );
 
   // ================= GUARDIANS DATA =================
-  final guardianRemoteDataSource = GuardianRemoteDataSource(FirebaseFirestore.instance);
-  final guardianRepository = GuardianRepositoryImpl(guardianRemoteDataSource);
+  final guardianRemoteDataSource =
+  GuardianRemoteDataSource(FirebaseFirestore.instance);
+  final guardianRepository =
+  GuardianRepositoryImpl(guardianRemoteDataSource);
 
   runApp(
     MultiRepositoryProvider(
@@ -88,36 +98,39 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiBlocProvider(
       providers: [
+        // ================= AUTH BLOC =================
         BlocProvider<AuthBloc>(
           create: (context) => AuthBloc(
             authRepository: context.read<AuthRepository>(),
-            registerUser: RegisterUser(context.read<AuthRepository>(), context.read<UserRepository>()),
+            registerUser: RegisterUser(
+              context.read<AuthRepository>(),
+              context.read<UserRepository>(),
+            ),
           ),
         ),
-        // ✅ CUNG CẤP SETTINGSBLOC Ở ĐÂY ĐỂ DÙNG TOÀN APP
+
+        // ================= SETTINGS BLOC =================
         BlocProvider<SettingsBloc>(
           create: (context) => SettingsBloc(
             context.read<SettingsRepository>(),
           )..add(LoadHiddenPanicSettingsEvent()),
         ),
       ],
-
-        child: MaterialApp(
-          navigatorKey: navigatorKey,
-          debugShowCheckedModeBanner: false,
-          title: 'SafeTrek',
-          theme: ThemeData(
-            useMaterial3: true,
-            colorSchemeSeed: Colors.indigo,
-          ),
-          builder: (context, child) {
+      child: MaterialApp(
+        navigatorKey: navigatorKey,
+        debugShowCheckedModeBanner: false,
+        title: 'SafeTrek',
+        theme: ThemeData(
+          useMaterial3: true,
+          colorSchemeSeed: Colors.indigo,
+        ),
+        builder: (context, child) {
           return PanicListener(
             child: child!,
           );
         },
-          home: const SplashScreen(),
-        ),
-
+        home: const SplashScreen(),
+      ),
     );
   }
 }
