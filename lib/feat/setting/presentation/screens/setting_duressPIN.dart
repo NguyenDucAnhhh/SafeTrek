@@ -53,6 +53,11 @@ class _SettingDuressPINState extends State<SettingDuressPIN> {
       _showSnackBar("Mã PIN mới không khớp", isError: true);
       return;
     }
+    // New check
+    if (newPin == widget.userSetting.safePIN) {
+      _showSnackBar("Mã PIN bị ép buộc không được trùng với mã PIN an toàn", isError: true);
+      return;
+    }
 
     setState(() => _isLoading = true);
 
