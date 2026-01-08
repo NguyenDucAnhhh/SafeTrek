@@ -1,6 +1,7 @@
 import '../entity/Guardian.dart';
 
 abstract class GuardianRepository {
+  Stream<List<Guardian>> getGuardiansStream();
   Future<List<Guardian>> getGuardians();
   /// Trả về ID của bản ghi vừa tạo trên Firestore
   Future<String> addGuardian(Guardian guardian);

@@ -6,6 +6,19 @@ class GuardianRemoteDataSource {
 
   GuardianRemoteDataSource(this.firestore);
 
+  Stream<List<GuardianModel>> getGuardiansStream(String userId) {
+    final userRef = firestore.collection('users').doc(userId);
+    return firestore
+        .collection('guardians')
+        .where('userID', isEqualTo: userRef)
+        .snapshots()
+        .map((snapshot) {
+      return snapshot.docs
+          .map((doc) => GuardianModel.fromFirestore(doc))
+          .toList();
+    });
+  }
+
   // Lấy danh sách người bảo vệ từ Collection 'guardians' ở gốc
   Future<List<GuardianModel>> getGuardians(String userId) async {
     // Tạo Reference đến user để lọc (vì trong ảnh userID là kiểu Reference)
