@@ -43,6 +43,8 @@ class _TripMonitoringState extends State<TripMonitoring> {
   final List<Map<String, dynamic>> _locationBuffer = [];
   Timer? _flushTimer;
   Timer? _sampleTimer;
+  bool _isFlushing = false;
+  bool _isSampling = false;
   String? _prefsTripId;
   String? _lastStatusHandled;
   bool _isNotifying = false;
@@ -192,6 +194,8 @@ class _TripMonitoringState extends State<TripMonitoring> {
   }
 
   Future<void> _recordLocation() async {
+    if (_isSampling) return;
+    _isSampling = true;
     try {
       final location = await LocationService.getCurrentLocation();
       if (location == null) return;
@@ -206,6 +210,8 @@ class _TripMonitoringState extends State<TripMonitoring> {
       await _addToBuffer(record);
     } catch (e) {
       debugPrint("Error recording location: $e");
+    } finally {
+      _isSampling = false;
     }
   }
 
@@ -251,15 +257,19 @@ class _TripMonitoringState extends State<TripMonitoring> {
 
   Future<void> _flushLocationBuffer() async {
     if (_locationBuffer.isEmpty) return;
+    if (_isFlushing) return;
+    _isFlushing = true;
     try {
       await _tripRepository.addLocationBatch(List<Map<String, dynamic>>.from(_locationBuffer));
       _locationBuffer.clear();
     } catch (e) {
       debugPrint('Failed to flush location buffer: $e');
+    } finally {
+      _isFlushing = false;
     }
   }
 
-  Future<void> _triggerAlert(String triggerMethod) async {
+  Future<void> _triggerAlert(String triggerMethod, {bool silent = false, bool markAlarm = true}) async {
     try {
       // Capture GuardianRepository early to avoid using BuildContext inside
       // async work (State may be unmounted by the time async ops complete).
@@ -298,55 +308,63 @@ class _TripMonitoringState extends State<TripMonitoring> {
           debugPrint('Failed to persist final location: $e');
         }
       }
-      final alert = {
-        'tripId': widget.tripId,
-        'userId': user.uid,
-        'triggerMethod': triggerMethod,
-        'timestamp': FieldValue.serverTimestamp(),
-        'location': location != null ? GeoPoint(location['latitude'], location['longitude']) : null,
-        'status': 'Sent',
-        'alertType': 'Push',
-      };
+      if (markAlarm) {
+        final alert = {
+          'tripId': widget.tripId,
+          'userId': user.uid,
+          'triggerMethod': triggerMethod,
+          'timestamp': FieldValue.serverTimestamp(),
+          'location': location != null ? GeoPoint(location['latitude'], location['longitude']) : null,
+          'status': 'Sent',
+          'alertType': 'Push',
+        };
 
-      await _tripRepository.addAlertLog(alert);
+        await _tripRepository.addAlertLog(alert);
 
-      await _tripRepository.updateTrip(widget.tripId, {
-        'status': 'Báo động',
-        'actualEndTime': FieldValue.serverTimestamp(),
-        'lastLocation': location != null ? GeoPoint(location['latitude'], location['longitude']) : null,
-      });
+        await _tripRepository.updateTrip(widget.tripId, {
+          'status': 'Báo động',
+          'actualEndTime': FieldValue.serverTimestamp(),
+          'lastLocation': location != null ? GeoPoint(location['latitude'], location['longitude']) : null,
+        });
 
-      // Try to send SMS via Cloud Function to guardians
-      try {
-        final func = FirebaseFunctions.instance.httpsCallable('sendAlertSms');
-        await func.call(<String, dynamic>{'tripId': widget.tripId, 'reason': triggerMethod});
-      } catch (e) {
-        debugPrint('sendAlertSms failed: $e');
-      }
+        // Try to send SMS via Cloud Function to guardians
+        try {
+          final func = FirebaseFunctions.instance.httpsCallable('sendAlertSms');
+          await func.call(<String, dynamic>{'tripId': widget.tripId, 'reason': triggerMethod});
+        } catch (e) {
+          debugPrint('sendAlertSms failed: $e');
+        }
 
-      // Also send email alerts to guardians (uses EmergencyUtils -> EmailJS)
-      try {
-        await EmergencyUtils.sendTripAlertWithRepo(guardianRepo, triggerMethod: triggerMethod);
-      } catch (e) {
-        debugPrint('sendTripAlertWithRepo failed: $e');
-      }
+        // Also send email alerts to guardians (uses EmergencyUtils -> EmailJS)
+        try {
+          await EmergencyUtils.sendTripAlertWithRepo(guardianRepo, triggerMethod: triggerMethod);
+        } catch (e) {
+          debugPrint('sendTripAlertWithRepo failed: $e');
+        }
 
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('ĐÃ GỬI CẢNH BÁO KHẨN CẤP!'),
-            backgroundColor: Colors.red,
-          ),
-        );
-        // After sending a panic alert via the on-screen emergency button,
-        // return the user to the Trip screen so they leave monitoring view.
-        if (triggerMethod == 'PanicButton') {
+        if (mounted && !silent) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('ĐÃ GỬI CẢNH BÁO KHẨN CẤP!'),
+              backgroundColor: Colors.red,
+            ),
+          );
+          // After sending an alert from monitoring (timeout or panic),
+          // return the user to the MainScreen so they leave monitoring view.
           Navigator.pushAndRemoveUntil(
             context,
-            MaterialPageRoute(builder: (context) => const trip_page.Trip()),
+            MaterialPageRoute(builder: (context) => const MainScreen()),
             (route) => false,
           );
         }
+      } else {
+        // markAlarm == false: only send silent email alert (no alertLog, no trip status change)
+        try {
+          await EmergencyUtils.sendTripAlertWithRepo(guardianRepo, triggerMethod: triggerMethod);
+        } catch (e) {
+          debugPrint('sendTripAlertWithRepo failed (silent): $e');
+        }
+        // Do not show any SnackBar or navigate when silent.
       }
     } catch (e) {
       debugPrint("Error triggering alert: $e");
@@ -435,16 +453,24 @@ class _TripMonitoringState extends State<TripMonitoring> {
         });
 
       } else if (enteredPin == duressPIN) {
+        // Duress PIN: show UI as if safe, but keep Firestore trip status = 'Báo động'
+        // and send alerts silently (no in-app emergency SnackBar).
         tripStatus = 'Báo động';
-        messageText = 'Cảnh báo ép buộc đã được gửi đi một cách bí mật.';
-        messageColor = Colors.orange;
+        messageText = 'Đã xác nhận đến nơi an toàn!';
+        messageColor = Colors.green;
 
         // Hủy timer ngay
         _countdownTimer.cancel();
         _locationTimer?.cancel();
 
-        // CẬP NHẬT NGAY LẬP TỨC (hàm _triggerAlert sẽ làm việc này)
-        await _triggerAlert('DuressPIN');
+        // Call _triggerAlert to create alertLog and set trip status = 'Báo động',
+        // but suppress UI by using silent=true. _triggerAlert will update
+        // lastLocation and actualEndTime as part of marking alarm.
+        try {
+          await _triggerAlert('DuressPIN', silent: true, markAlarm: true);
+        } catch (e) {
+          debugPrint('Failed to send duress alert (silent): $e');
+        }
 
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
