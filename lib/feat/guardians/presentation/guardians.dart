@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter_contacts/flutter_contacts.dart';
 import 'package:share_plus/share_plus.dart';
 
 // Import các lớp Clean Architecture
@@ -16,6 +17,9 @@ import 'package:safetrek_project/feat/guardians/presentation/bloc/guardian_state
 // Import Widgets
 import 'package:safetrek_project/core/widgets/show_success_snack_bar.dart';
 import 'guardiancard.dart';
+
+//Import quyen
+import 'package:permission_handler/permission_handler.dart';
 
 class GuardiansScreen extends StatelessWidget {
   const GuardiansScreen({super.key});
@@ -41,6 +45,37 @@ class GuardiansView extends StatelessWidget {
     final phoneController = TextEditingController();
     final emailController = TextEditingController();
 
+    // Hàm chọn người từ danh bạ
+    Future<void> _pickContact() async {
+      // Kiểm tra trạng thái thực tế từ hệ điều hành
+      var status = await Permission.contacts.status;
+      print("Trạng thái thực tế: $status");
+
+      if (status.isDenied) {
+        // Nếu bị từ chối, hãy xin lại một lần nữa bằng permission_handler
+        status = await Permission.contacts.request();
+      }
+
+      if (status.isGranted) {
+        final contact = await FlutterContacts.openExternalPick();
+
+        if (contact != null) {
+          nameController.text = contact.displayName;
+          if (contact.phones.isNotEmpty) {
+            // Lấy SĐT đầu tiên và xóa các ký tự thừa
+            phoneController.text = contact.phones.first.number.replaceAll(RegExp(r'[\s\-\(\)]'), '');
+          }
+          if (contact.emails.isNotEmpty) {
+            emailController.text = contact.emails.first.address;
+          }
+        }
+      } else if (status.isPermanentlyDenied) {
+        // Nếu bị từ chối vĩnh viễn (do bấm "Don't ask again")
+        print("Bị từ chối vĩnh viễn, mở cài đặt...");
+        openAppSettings();
+      }
+    }
+
     showDialog(
       context: context,
       builder: (BuildContext dialogContext) {
@@ -58,8 +93,33 @@ class GuardiansView extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Nhập thông tin người bạn muốn thêm làm người bảo vệ'),
+                const Text('Chọn từ danh bạ hoặc nhập thông tin thủ công.'),
                 const SizedBox(height: 20),
+                Center(
+                  child: ElevatedButton.icon(
+                    onPressed: _pickContact,
+                    icon: const Icon(Icons.contact_phone, size: 18),
+                    label: const Text('Chọn từ Danh bạ'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 15),
+                const Row(children: <Widget>[
+                  Expanded(child: Divider()),
+                  Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 8.0),
+                    child: Text("HOẶC"),
+                  ),
+                  Expanded(child: Divider()),
+                ]),
+                const SizedBox(height: 15),
                 RichText(
                   text: const TextSpan(
                     style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
@@ -241,7 +301,7 @@ class GuardiansView extends StatelessWidget {
                                           overflow: TextOverflow.ellipsis,
                                         ),
                                         Text(
-                                          'Quản lý người bảo vệ ($count/5)',
+                                          'Quản lý người bảo vệ',
                                           style: const TextStyle(fontSize: 13),
                                         ),
                                       ],
@@ -270,30 +330,30 @@ class GuardiansView extends StatelessWidget {
                                 state.guardians.isEmpty
                                     ? _buildEmptyState(context)
                                     : ListView.builder(
-                                        shrinkWrap: true,
-                                        physics: const NeverScrollableScrollPhysics(),
-                                        itemCount: state.guardians.length,
-                                        itemBuilder: (context, index) {
-                                          return GuardianCard(
-                                            guardian: state.guardians[index],
-                                            onRemove: () {
-                                              if (state.guardians[index].id != null) {
-                                                context.read<GuardianBloc>().add(
-                                                  RemoveGuardianEvent(state.guardians[index].id!), // Truyền id thật
-                                                );
-                                              } else {
-                                                // Nếu id null (do chưa load kịp), báo lỗi
-                                                ScaffoldMessenger.of(context).showSnackBar(
-                                                  const SnackBar(content: Text("Không tìm thấy ID để xóa")),
-                                                );
-                                              }
-                                            },
-
+                                  shrinkWrap: true,
+                                  physics: const NeverScrollableScrollPhysics(),
+                                  itemCount: state.guardians.length,
+                                  itemBuilder: (context, index) {
+                                    return GuardianCard(
+                                      guardian: state.guardians[index],
+                                      onRemove: () {
+                                        if (state.guardians[index].id != null) {
+                                          context.read<GuardianBloc>().add(
+                                            RemoveGuardianEvent(state.guardians[index].id!), // Truyền id thật
                                           );
-                                        },
-                                      )
+                                        } else {
+                                          // Nếu id null (do chưa load kịp), báo lỗi
+                                          ScaffoldMessenger.of(context).showSnackBar(
+                                            const SnackBar(content: Text("Không tìm thấy ID để xóa")),
+                                          );
+                                        }
+                                      },
+
+                                    );
+                                  },
+                                )
                               else if (state is GuardianError)
-                                Text(state.message, style: const TextStyle(color: Colors.red))
+                                  Text(state.message, style: const TextStyle(color: Colors.red))
                             ],
                           );
                         },
