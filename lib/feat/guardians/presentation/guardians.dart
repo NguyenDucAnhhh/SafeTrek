@@ -198,106 +198,112 @@ class GuardiansView extends StatelessWidget {
               colors: [Color(0xFFEFF6FF), Color(0xFFE0E7FF)],
             ),
           ),
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.start,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Card(
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(15.0),
-                  ),
-                  elevation: 4,
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: BlocBuilder<GuardianBloc, GuardianState>(
-                      builder: (context, state) {
-                        int count = 0;
-                        if (state is GuardianLoaded) {
-                          count = state.guardians.length;
-                        }
+          child: RefreshIndicator(
+            onRefresh: () async {
+              context.read<GuardianBloc>().add(LoadGuardiansEvent());
+            },
+            child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Card(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(15.0),
+                    ),
+                    elevation: 4,
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: BlocBuilder<GuardianBloc, GuardianState>(
+                        builder: (context, state) {
+                          int count = 0;
+                          if (state is GuardianLoaded) {
+                            count = state.guardians.length;
+                          }
 
-                        return Column(
-                          children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Expanded( // SỬA TẠI ĐÂY: Thêm Expanded để tiêu đề không chiếm hết chỗ
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      const Text(
-                                        'Danh bạ Khẩn cấp',
-                                        style: TextStyle(
-                                          fontSize: 18,
-                                          fontWeight: FontWeight.bold,
+                          return Column(
+                            children: [
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Expanded( // SỬA TẠI ĐÂY: Thêm Expanded để tiêu đề không chiếm hết chỗ
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        const Text(
+                                          'Danh bạ Khẩn cấp',
+                                          style: TextStyle(
+                                            fontSize: 18,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                          overflow: TextOverflow.ellipsis,
                                         ),
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                      Text(
-                                        'Quản lý người bảo vệ ($count/5)',
-                                        style: const TextStyle(fontSize: 13),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                ElevatedButton.icon(
-                                  onPressed: () => _showAddGuardianDialog(context),
-                                  icon: const Icon(Icons.add, size: 18),
-                                  label: const Text('Thêm'),
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: const Color(0xFF1877F2),
-                                    foregroundColor: Colors.white,
-                                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(20),
+                                        Text(
+                                          'Quản lý người bảo vệ ($count/5)',
+                                          style: const TextStyle(fontSize: 13),
+                                        ),
+                                      ],
                                     ),
                                   ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 20),
-                            if (state is GuardianLoading)
-                              const Center(child: CircularProgressIndicator())
-                            else if (state is GuardianLoaded)
-                              state.guardians.isEmpty
-                                  ? _buildEmptyState(context)
-                                  : ListView.builder(
-                                      shrinkWrap: true,
-                                      physics: const NeverScrollableScrollPhysics(),
-                                      itemCount: state.guardians.length,
-                                      itemBuilder: (context, index) {
-                                        return GuardianCard(
-                                          guardian: state.guardians[index],
-                                          onRemove: () {
-                                            if (state.guardians[index].id != null) {
-                                              context.read<GuardianBloc>().add(
-                                                RemoveGuardianEvent(state.guardians[index].id!), // Truyền id thật
-                                              );
-                                            } else {
-                                              // Nếu id null (do chưa load kịp), báo lỗi
-                                              ScaffoldMessenger.of(context).showSnackBar(
-                                                const SnackBar(content: Text("Không tìm thấy ID để xóa")),
-                                              );
-                                            }
-                                          },
+                                  const SizedBox(width: 8),
+                                  ElevatedButton.icon(
+                                    onPressed: () => _showAddGuardianDialog(context),
+                                    icon: const Icon(Icons.add, size: 18),
+                                    label: const Text('Thêm'),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: const Color(0xFF1877F2),
+                                      foregroundColor: Colors.white,
+                                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(20),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 20),
+                              if (state is GuardianLoading)
+                                const Center(child: CircularProgressIndicator())
+                              else if (state is GuardianLoaded)
+                                state.guardians.isEmpty
+                                    ? _buildEmptyState(context)
+                                    : ListView.builder(
+                                        shrinkWrap: true,
+                                        physics: const NeverScrollableScrollPhysics(),
+                                        itemCount: state.guardians.length,
+                                        itemBuilder: (context, index) {
+                                          return GuardianCard(
+                                            guardian: state.guardians[index],
+                                            onRemove: () {
+                                              if (state.guardians[index].id != null) {
+                                                context.read<GuardianBloc>().add(
+                                                  RemoveGuardianEvent(state.guardians[index].id!), // Truyền id thật
+                                                );
+                                              } else {
+                                                // Nếu id null (do chưa load kịp), báo lỗi
+                                                ScaffoldMessenger.of(context).showSnackBar(
+                                                  const SnackBar(content: Text("Không tìm thấy ID để xóa")),
+                                                );
+                                              }
+                                            },
 
-                                        );
-                                      },
-                                    )
-                            else if (state is GuardianError)
-                              Text(state.message, style: const TextStyle(color: Colors.red))
-                          ],
-                        );
-                      },
+                                          );
+                                        },
+                                      )
+                              else if (state is GuardianError)
+                                Text(state.message, style: const TextStyle(color: Colors.red))
+                            ],
+                          );
+                        },
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(height: 20),
-                _buildHowItWorksCard(),
-              ],
+                  const SizedBox(height: 20),
+                  _buildHowItWorksCard(),
+                ],
+              ),
             ),
           ),
         ),

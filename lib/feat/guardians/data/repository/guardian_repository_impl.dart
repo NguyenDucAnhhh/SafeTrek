@@ -21,9 +21,20 @@ class GuardianRepositoryImpl implements GuardianRepository {
   }
 
   @override
+  Stream<List<Guardian>> getGuardiansStream() {
+    final uid = _getUidOrThrow();
+    // Ánh xạ Stream<List<GuardianModel>> thành Stream<List<Guardian>>
+    return remoteDataSource.getGuardiansStream(uid).map((models) {
+      return models.cast<Guardian>().toList();
+    });
+  }
+
+  @override
   Future<List<Guardian>> getGuardians() async {
     final uid = _getUidOrThrow();
-    return await remoteDataSource.getGuardians(uid);
+    final models = await remoteDataSource.getGuardians(uid);
+    // Ánh xạ List<GuardianModel> thành List<Guardian>
+    return models.cast<Guardian>().toList();
   }
 
   @override
