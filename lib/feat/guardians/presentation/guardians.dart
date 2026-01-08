@@ -301,7 +301,7 @@ class GuardiansView extends StatelessWidget {
                                           overflow: TextOverflow.ellipsis,
                                         ),
                                         Text(
-                                          'Quản lý người bảo vệ ($count/5)',
+                                          'Quản lý người bảo vệ',
                                           style: const TextStyle(fontSize: 13),
                                         ),
                                       ],
@@ -330,30 +330,30 @@ class GuardiansView extends StatelessWidget {
                                 state.guardians.isEmpty
                                     ? _buildEmptyState(context)
                                     : ListView.builder(
-                                        shrinkWrap: true,
-                                        physics: const NeverScrollableScrollPhysics(),
-                                        itemCount: state.guardians.length,
-                                        itemBuilder: (context, index) {
-                                          return GuardianCard(
-                                            guardian: state.guardians[index],
-                                            onRemove: () {
-                                              if (state.guardians[index].id != null) {
-                                                context.read<GuardianBloc>().add(
-                                                  RemoveGuardianEvent(state.guardians[index].id!), // Truyền id thật
-                                                );
-                                              } else {
-                                                // Nếu id null (do chưa load kịp), báo lỗi
-                                                ScaffoldMessenger.of(context).showSnackBar(
-                                                  const SnackBar(content: Text("Không tìm thấy ID để xóa")),
-                                                );
-                                              }
-                                            },
-
+                                  shrinkWrap: true,
+                                  physics: const NeverScrollableScrollPhysics(),
+                                  itemCount: state.guardians.length,
+                                  itemBuilder: (context, index) {
+                                    return GuardianCard(
+                                      guardian: state.guardians[index],
+                                      onRemove: () {
+                                        if (state.guardians[index].id != null) {
+                                          context.read<GuardianBloc>().add(
+                                            RemoveGuardianEvent(state.guardians[index].id!), // Truyền id thật
                                           );
-                                        },
-                                      )
+                                        } else {
+                                          // Nếu id null (do chưa load kịp), báo lỗi
+                                          ScaffoldMessenger.of(context).showSnackBar(
+                                            const SnackBar(content: Text("Không tìm thấy ID để xóa")),
+                                          );
+                                        }
+                                      },
+
+                                    );
+                                  },
+                                )
                               else if (state is GuardianError)
-                                Text(state.message, style: const TextStyle(color: Colors.red))
+                                  Text(state.message, style: const TextStyle(color: Colors.red))
                             ],
                           );
                         },
