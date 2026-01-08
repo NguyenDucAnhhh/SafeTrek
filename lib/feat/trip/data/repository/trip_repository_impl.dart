@@ -23,12 +23,13 @@ class TripRepositoryImpl implements TripRepository {
     final models = await remoteDataSource.getTrips(uid);
     return models
       .map((m) => Trip(
-          name: m.name,
-          startedAt: m.startedAt,
-          expectedEndTime: m.expectedEndTime,
-          status: m.status, // stored in Vietnamese
-          lastLocation: m.lastLocation,
-        ))
+            id: m.id,
+            name: m.name,
+            startedAt: m.startedAt,
+            expectedEndTime: m.expectedEndTime,
+            status: m.status,
+            lastLocation: m.lastLocation,
+          ))
       .toList();
   }
 
@@ -37,7 +38,8 @@ class TripRepositoryImpl implements TripRepository {
     final uid = _getUidOrThrow();
     // Khi thêm chuyến đi, lưu trạng thái bằng tiếng Việt
     String statusToSave;
-    switch (trip.status) {
+    final status = trip.status ?? '';
+    switch (status) {
       case 'Active':
       case 'Đang tiến hành':
         statusToSave = 'Đang tiến hành';
@@ -51,7 +53,7 @@ class TripRepositoryImpl implements TripRepository {
         statusToSave = 'Kết thúc an toàn';
         break;
       default:
-        statusToSave = trip.status ?? 'Không rõ';
+        statusToSave = status.isNotEmpty ? status : 'Không rõ';
     }
     final model = TripModel(
       name: trip.name,
@@ -61,5 +63,52 @@ class TripRepositoryImpl implements TripRepository {
       lastLocation: trip.lastLocation,
     );
     return await remoteDataSource.addTrip(uid, model);
+  }
+
+  @override
+  Future<List<Trip>> getActiveTrips() async {
+    final uid = _getUidOrThrow();
+    final models = await remoteDataSource.getActiveTrips(uid);
+    return models
+      .map((m) => Trip(
+            id: m.id,
+            name: m.name,
+            startedAt: m.startedAt,
+            expectedEndTime: m.expectedEndTime,
+            status: m.status,
+            lastLocation: m.lastLocation,
+          ))
+      .toList();
+  }
+
+  @override
+  Stream<String?> subscribeToTripStatus(String tripId) {
+    return remoteDataSource.tripStatusStream(tripId).map((doc) {
+      final data = doc.data();
+      if (data == null) return null;
+      if (data is Map<String, dynamic>) {
+        return data['status'] as String?;
+      }
+      try {
+        return (data as Map)['status'] as String?;
+      } catch (_) {
+        return null;
+      }
+    });
+  }
+
+  @override
+  Future<void> addLocationBatch(List<Map<String, dynamic>> locations) async {
+    await remoteDataSource.addLocationBatch(locations);
+  }
+
+  @override
+  Future<void> addAlertLog(Map<String, dynamic> alert) async {
+    await remoteDataSource.addAlertLog(alert);
+  }
+
+  @override
+  Future<void> updateTrip(String tripId, Map<String, dynamic> data) async {
+    await remoteDataSource.updateTrip(tripId, data);
   }
 }

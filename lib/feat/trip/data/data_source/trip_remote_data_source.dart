@@ -28,4 +28,45 @@ class TripRemoteDataSource {
   Future<void> updateTripStatus(String tripId, String status) async {
     await firestore.collection('trips').doc(tripId).update({'status': status});
   }
+
+  // Lấy active trips (status == 'Đang tiến hành') cho user
+  Future<List<TripModel>> getActiveTrips(String userId) async {
+    final snapshot = await firestore
+        .collection('trips')
+        .where('userId', isEqualTo: userId)
+        .where('status', isEqualTo: 'Đang tiến hành')
+        .get();
+    return snapshot.docs.map((d) => TripModel.fromFirestore(d)).toList();
+  }
+
+  // Stream status of a trip (returns document snapshots)
+  Stream<DocumentSnapshot> tripStatusStream(String tripId) {
+    return firestore.collection('trips').doc(tripId).snapshots();
+  }
+
+  // Add a single location record
+  Future<void> addLocation(Map<String, dynamic> location) async {
+    await firestore.collection('locationHistories').add(location);
+  }
+
+  // Batch add locations
+  Future<void> addLocationBatch(List<Map<String, dynamic>> locations) async {
+    final batch = firestore.batch();
+    final col = firestore.collection('locationHistories');
+    for (final item in locations) {
+      final ref = col.doc();
+      batch.set(ref, item);
+    }
+    await batch.commit();
+  }
+
+  // Add alert log
+  Future<void> addAlertLog(Map<String, dynamic> alert) async {
+    await firestore.collection('alertLogs').add(alert);
+  }
+
+  // Generic update
+  Future<void> updateTrip(String tripId, Map<String, dynamic> data) async {
+    await firestore.collection('trips').doc(tripId).update(data);
+  }
 }

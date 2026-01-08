@@ -7,7 +7,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/widgets.dart';
 import 'firebase_options.dart';
-import 'package:cloud_functions/cloud_functions.dart';
 
 Future<void> initializeService() async {
   final service = FlutterBackgroundService();
@@ -82,13 +81,6 @@ void onStart(ServiceInstance service) async {
               'status': 'Sent',
               'alertType': 'Auto',
             });
-            // Try to send SMS via Cloud Function to guardians
-            try {
-              final func = FirebaseFunctions.instance.httpsCallable('sendAlertSms');
-              await func.call(<String, dynamic>{'tripId': tripId, 'reason': 'timeout'});
-            } catch (e) {
-              debugPrint('[background_service] sendAlertSms failed: $e');
-            }
           } catch (e) {
             debugPrint('[background_service] failed to create alertLog: $e');
           }

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:safetrek_project/feat/trip/data/model/trip_model.dart';
 import 'package:safetrek_project/feat/trip/presentation/trip_monitoring.dart';
 import 'package:safetrek_project/core/widgets/secondary_header.dart';
 import 'package:safetrek_project/feat/trip/data/data_source/trip_remote_data_source.dart';
@@ -27,13 +26,15 @@ class _StartTripState extends State<StartTrip> {
   final TextEditingController _timeController = TextEditingController(text: '15');
   int? _selectedTime;
   late TripBloc _tripBloc;
+  late final TripRepositoryImpl _tripRepository;
   bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
     _selectedTime = 15;
-    _tripBloc = TripBloc(TripRepositoryImpl(TripRemoteDataSource(FirebaseFirestore.instance)));
+    _tripRepository = TripRepositoryImpl(TripRemoteDataSource(FirebaseFirestore.instance));
+    _tripBloc = TripBloc(_tripRepository);
     _checkAndResumeActiveTrip();
   }
 
@@ -47,28 +48,10 @@ class _StartTripState extends State<StartTrip> {
 
   Future<void> _checkAndResumeActiveTrip() async {
     try {
-      final uid = FirebaseAuth.instance.currentUser?.uid;
-      if (uid == null) {
-        if (mounted) setState(() => _isLoading = false);
-        return;
-      }
-
-        final querySnapshot = await FirebaseFirestore.instance
-            .collection('trips')
-            .where('userId', isEqualTo: uid)
-            .where('status', isEqualTo: 'Đang tiến hành')
-            .get();
-
-      if (querySnapshot.docs.isNotEmpty) {
-        // Firestore may require a composite index for where+orderBy; avoid by sorting client-side
-        querySnapshot.docs.sort((a, b) {
-          final aTs = (a.data()?['startedAt'] as Timestamp?)?.toDate() ?? DateTime.fromMillisecondsSinceEpoch(0);
-          final bTs = (b.data()?['startedAt'] as Timestamp?)?.toDate() ?? DateTime.fromMillisecondsSinceEpoch(0);
-          return bTs.compareTo(aTs);
-        });
-        final activeTripDoc = querySnapshot.docs.first;
-        final activeTrip = TripModel.fromFirestore(activeTripDoc);
-
+      final activeTrips = await _tripRepository.getActiveTrips();
+      if (activeTrips.isNotEmpty) {
+        activeTrips.sort((a, b) => (b.startedAt).compareTo(a.startedAt));
+        final activeTrip = activeTrips.first;
         final now = DateTime.now();
         final remaining = activeTrip.expectedEndTime.isAfter(now)
             ? activeTrip.expectedEndTime.difference(now)
