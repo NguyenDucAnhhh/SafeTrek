@@ -42,9 +42,13 @@ class _TripMonitoringState extends State<TripMonitoring> {
   int? _prefsDurationSec;
   final List<Map<String, dynamic>> _locationBuffer = [];
   Timer? _flushTimer;
+  Timer? _sampleTimer;
   String? _prefsTripId;
   String? _lastStatusHandled;
   bool _isNotifying = false;
+  DateTime? _lastRecordedAt;
+  double? _lastLat;
+  double? _lastLng;
 
   @override
   void initState() {
@@ -54,6 +58,13 @@ class _TripMonitoringState extends State<TripMonitoring> {
     _tripRepository = TripRepositoryImpl(TripRemoteDataSource(FirebaseFirestore.instance));
     _startLocationTracking();
     _listenToTripStatus();
+    // Ensure we persist locations regularly during monitoring.
+    _startFlushTimer();
+    // Persist one immediate sample at start so `locationHistories` has an entry
+    // at t=0 and then every 30s afterwards.
+    _recordLocation();
+    // Start periodic sampling every 30s to guarantee writes during monitoring.
+    _sampleTimer ??= Timer.periodic(const Duration(seconds: 30), (_) => _recordLocation());
   }
 
   Future<void> _initFromPrefsAndStart() async {
@@ -199,7 +210,28 @@ class _TripMonitoringState extends State<TripMonitoring> {
   }
 
   Future<void> _addToBuffer(Map<String, dynamic> record) async {
-    _locationBuffer.add(record);
+    // Deduplicate rapid consecutive records (e.g., initial immediate sample +
+    // a near-simultaneous position-stream event). If the last recorded time
+    // is recent and coordinates are almost identical, skip adding.
+    try {
+      final lat = (record['latitude'] as num?)?.toDouble();
+      final lng = (record['longitude'] as num?)?.toDouble();
+      final now = DateTime.now();
+      if (_lastRecordedAt != null && lat != null && lng != null) {
+        final age = now.difference(_lastRecordedAt!);
+        final latDiff = (_lastLat == null) ? double.infinity : (lat - _lastLat!).abs();
+        final lngDiff = (_lastLng == null) ? double.infinity : (lng - _lastLng!).abs();
+        if (age.inSeconds < 5 && latDiff < 0.00005 && lngDiff < 0.00005) {
+          return; // skip near-duplicate
+        }
+      }
+      _locationBuffer.add(record);
+      _lastRecordedAt = DateTime.now();
+      _lastLat = (record['latitude'] as num?)?.toDouble();
+      _lastLng = (record['longitude'] as num?)?.toDouble();
+    } catch (e) {
+      _locationBuffer.add(record);
+    }
     // Flush when buffer is large enough
     if (_locationBuffer.length >= 3) {
       await _flushLocationBuffer();
@@ -210,7 +242,9 @@ class _TripMonitoringState extends State<TripMonitoring> {
   }
 
   void _startFlushTimer() {
-    _flushTimer ??= Timer.periodic(const Duration(seconds: 60), (_) async {
+    // Flush buffered locations every 30 seconds so `locationHistories`
+    // receives recent positions during monitoring.
+    _flushTimer ??= Timer.periodic(const Duration(seconds: 30), (_) async {
       await _flushLocationBuffer();
     });
   }
@@ -249,6 +283,21 @@ class _TripMonitoringState extends State<TripMonitoring> {
       if (user == null) return;
 
       final location = await LocationService.getCurrentLocation();
+      // Persist final location into locationHistories so trip end has a record
+      if (location != null) {
+        final finalRecord = {
+          'tripId': widget.tripId,
+          'latitude': location['latitude'],
+          'longitude': location['longitude'],
+          'timestamp': FieldValue.serverTimestamp(),
+          'batteryLevel': null,
+        };
+        try {
+          await _tripRepository.addLocationBatch([finalRecord]);
+        } catch (e) {
+          debugPrint('Failed to persist final location: $e');
+        }
+      }
       final alert = {
         'tripId': widget.tripId,
         'userId': user.uid,
@@ -309,6 +358,9 @@ class _TripMonitoringState extends State<TripMonitoring> {
     _countdownTimer.cancel();
     _locationTimer?.cancel();
     _tripStatusSubscription?.cancel();
+    _positionSubscription?.cancel();
+    _flushTimer?.cancel();
+    _sampleTimer?.cancel();
     super.dispose();
   }
 
@@ -361,6 +413,21 @@ class _TripMonitoringState extends State<TripMonitoring> {
 
         // CẬP NHẬT NGAY LẬP TỨC
         final lastLocation = await LocationService.getCurrentLocation();
+        // Persist final location to locationHistories
+        if (lastLocation != null) {
+          final finalRecord = {
+            'tripId': widget.tripId,
+            'latitude': lastLocation['latitude'],
+            'longitude': lastLocation['longitude'],
+            'timestamp': FieldValue.serverTimestamp(),
+            'batteryLevel': null,
+          };
+          try {
+            await _tripRepository.addLocationBatch([finalRecord]);
+          } catch (e) {
+            debugPrint('Failed to persist final location on check-in: $e');
+          }
+        }
         await FirebaseFirestore.instance.collection('trips').doc(widget.tripId).update({
           'status': tripStatus,
           'lastLocation': lastLocation != null ? GeoPoint(lastLocation['latitude'], lastLocation['longitude']) : null,
@@ -410,6 +477,8 @@ class _TripMonitoringState extends State<TripMonitoring> {
       canPop: false,
       onPopInvokedWithResult: (bool didPop, _) {
         if (!mounted) return;
+        // When back is invoked and the pop is blocked (didPop == false),
+        // navigate to MainScreen (previous behavior used pushReplacement).
         if (!didPop) {
           Navigator.pushReplacement(
             context,
