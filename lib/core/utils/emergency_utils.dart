@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:safetrek_project/feat/guardians/domain/repository/guardian_repository.dart';
 import 'package:safetrek_project/feat/trip/data/services/location_service.dart';
 import 'package:volume_controller/volume_controller.dart';
@@ -62,12 +63,44 @@ class EmergencyUtils {
       final now = DateTime.now();
       final timeString = DateFormat('HH:mm:ss dd/MM/yyyy').format(now);
 
-      // Lấy vị trí (UI-safe)
-      Map<String, dynamic>? location;
+      // Prefer the most recent alertLog location as the source of truth.
+      GeoPoint? alertGeo;
       try {
-        location = await LocationService.getCurrentLocation();
-      } catch (_) {
-        location = null;
+        final currentUser = FirebaseAuth.instance.currentUser;
+        if (currentUser != null) {
+          final q = await FirebaseFirestore.instance
+              .collection('alertLogs')
+              .where('userId', isEqualTo: currentUser.uid)
+              .orderBy('timestamp', descending: true)
+              .limit(1)
+              .get();
+          if (q.docs.isNotEmpty) {
+            final data = q.docs.first.data();
+            final loc = data['location'];
+            if (loc is GeoPoint) {
+              alertGeo = loc;
+            } else if (loc is Map) {
+              final lat = loc['latitude'];
+              final lng = loc['longitude'];
+              if (lat != null && lng != null) {
+                alertGeo = GeoPoint(lat as double, lng as double);
+              }
+            }
+          }
+        }
+      } catch (e) {
+        debugPrint('Failed to read alertLogs: $e');
+      }
+
+      Map<String, dynamic>? location;
+      if (alertGeo != null) {
+        location = {'latitude': alertGeo.latitude, 'longitude': alertGeo.longitude};
+      } else {
+        try {
+          location = await LocationService.getCurrentLocation();
+        } catch (_) {
+          location = null;
+        }
       }
 
       final mapsLink = (location != null)
@@ -82,10 +115,30 @@ class EmergencyUtils {
       final currentUserName =
           currentUser?.displayName ?? currentUser?.email ?? 'Người dùng SafeTrek';
 
-      final message =
-          'Cảnh báo! $currentUserName đã bắt đầu một chuyến đi lúc $timeString và không checkin an toàn.'
-          '\nVị trí cuối cùng được ghi nhận: $mapsLink.'
-          '\nMức pin điện thoại còn lại: $batteryString.';
+      // Build subject and message based on trigger reason
+      String subject;
+      String message;
+      if (triggerMethod == 'PanicButton') {
+        subject = 'Cảnh báo KHẨN CẤP — $currentUserName';
+        message =
+            'CẢNH BÁO KHẨN CẤP! $currentUserName vừa kích hoạt nút khẩn cấp lúc $timeString.'
+            '\nVị trí hiện tại: $mapsLink.'
+            '\nMức pin điện thoại: $batteryString.'
+            '\nVui lòng liên hệ và kiểm tra ngay lập tức.';
+      } else if (triggerMethod == 'DuressPIN') {
+        subject = 'Cảnh báo ép buộc — $currentUserName';
+        message =
+            'Cảnh báo ép buộc: $currentUserName đã nhập mã ép buộc lúc $timeString.'
+            '\nVị trí cuối cùng được ghi nhận: $mapsLink.'
+            '\nMức pin điện thoại: $batteryString.'
+            '\nCảnh báo đã được gửi một cách bí mật.';
+      } else {
+        subject = 'Cảnh báo chuyến đi — $currentUserName';
+        message =
+            'Cảnh báo! $currentUserName đã bắt đầu một chuyến đi lúc $timeString và không checkin an toàn.'
+            '\nVị trí cuối cùng được ghi nhận: $mapsLink.'
+            '\nMức pin điện thoại còn lại: $batteryString.';
+      }
 
       final guardianRepo = context.read<GuardianRepository>();
       final guardians = await guardianRepo.getGuardians();
@@ -121,7 +174,7 @@ class EmergencyUtils {
                   'to_name': name,
                   'from_name': currentUserName,
                   'from_email': currentUser?.email ?? 'no-reply@yourdomain.com',
-                  'subject': 'Cảnh báo chuyến đi — $currentUserName',
+                  'subject': subject,
                   'message': message,
                   'reason': triggerMethod,
                 },
@@ -152,11 +205,44 @@ class EmergencyUtils {
       final now = DateTime.now();
       final timeString = DateFormat('HH:mm:ss dd/MM/yyyy').format(now);
 
-      Map<String, dynamic>? location;
+      // Prefer the latest alertLog entry for location, fallback to LocationService
+      GeoPoint? alertGeo;
       try {
-        location = await LocationService.getCurrentLocation();
-      } catch (_) {
-        location = null;
+        final currentUser = FirebaseAuth.instance.currentUser;
+        if (currentUser != null) {
+          final q = await FirebaseFirestore.instance
+              .collection('alertLogs')
+              .where('userId', isEqualTo: currentUser.uid)
+              .orderBy('timestamp', descending: true)
+              .limit(1)
+              .get();
+          if (q.docs.isNotEmpty) {
+            final data = q.docs.first.data();
+            final loc = data['location'];
+            if (loc is GeoPoint) {
+              alertGeo = loc;
+            } else if (loc is Map) {
+              final lat = loc['latitude'];
+              final lng = loc['longitude'];
+              if (lat != null && lng != null) {
+                alertGeo = GeoPoint(lat as double, lng as double);
+              }
+            }
+          }
+        }
+      } catch (e) {
+        debugPrint('Failed to read alertLogs: $e');
+      }
+
+      Map<String, dynamic>? location;
+      if (alertGeo != null) {
+        location = {'latitude': alertGeo.latitude, 'longitude': alertGeo.longitude};
+      } else {
+        try {
+          location = await LocationService.getCurrentLocation();
+        } catch (_) {
+          location = null;
+        }
       }
 
       final mapsLink = (location != null)
@@ -170,10 +256,30 @@ class EmergencyUtils {
       final currentUserName =
           currentUser?.displayName ?? currentUser?.email ?? 'Người dùng SafeTrek';
 
-      final message =
-          'Cảnh báo! $currentUserName đã bắt đầu một chuyến đi lúc $timeString và không checkin an toàn.'
-          '\nVị trí cuối cùng được ghi nhận: $mapsLink.'
-          '\nMức pin điện thoại còn lại: $batteryString.';
+      // Build subject and message based on trigger reason
+      String subject;
+      String message;
+      if (triggerMethod == 'PanicButton') {
+        subject = 'Cảnh báo KHẨN CẤP — $currentUserName';
+        message =
+            'CẢNH BÁO KHẨN CẤP! $currentUserName vừa kích hoạt nút khẩn cấp lúc $timeString.'
+            '\nVị trí hiện tại: $mapsLink.'
+            '\nMức pin điện thoại: $batteryString.'
+            '\nVui lòng liên hệ và kiểm tra ngay lập tức.';
+      } else if (triggerMethod == 'DuressPIN') {
+        subject = 'Cảnh báo ép buộc — $currentUserName';
+        message =
+            'Cảnh báo ép buộc: $currentUserName đã nhập mã ép buộc lúc $timeString.'
+            '\nVị trí cuối cùng được ghi nhận: $mapsLink.'
+            '\nMức pin điện thoại: $batteryString.'
+            '\nCảnh báo đã được gửi một cách bí mật.';
+      } else {
+        subject = 'Cảnh báo chuyến đi — $currentUserName';
+        message =
+            'Cảnh báo! $currentUserName đã bắt đầu một chuyến đi lúc $timeString và không checkin an toàn.'
+            '\nVị trí cuối cùng được ghi nhận: $mapsLink.'
+            '\nMức pin điện thoại còn lại: $batteryString.';
+      }
 
       final guardians = await guardianRepo.getGuardians();
       debugPrint('sendTripAlertWithRepo: guardians found = ${guardians.length}');
@@ -204,7 +310,7 @@ class EmergencyUtils {
                   'to_name': name,
                   'from_name': currentUserName,
                   'from_email': currentUser?.email ?? 'no-reply@yourdomain.com',
-                  'subject': 'Cảnh báo chuyến đi — $currentUserName',
+                  'subject': subject,
                   'message': message,
                   'reason': triggerMethod,
                 },

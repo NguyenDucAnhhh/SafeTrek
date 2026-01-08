@@ -290,6 +290,15 @@ class _TripMonitoringState extends State<TripMonitoring> {
             backgroundColor: Colors.red,
           ),
         );
+        // After sending a panic alert via the on-screen emergency button,
+        // return the user to the Trip screen so they leave monitoring view.
+        if (triggerMethod == 'PanicButton') {
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (context) => const trip_page.Trip()),
+            (route) => false,
+          );
+        }
       }
     } catch (e) {
       debugPrint("Error triggering alert: $e");

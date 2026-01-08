@@ -9,6 +9,7 @@ import 'package:safetrek_project/core/widgets/emergency_button.dart';
 import 'package:safetrek_project/feat/trip/presentation/trip_monitoring.dart';
 import 'package:safetrek_project/feat/trip/data/data_source/trip_remote_data_source.dart';
 import 'package:safetrek_project/feat/trip/data/repository/trip_repository_impl.dart';
+import 'package:safetrek_project/core/utils/emergency_utils.dart';
 
 class Trip extends StatefulWidget {
   const Trip({super.key});
@@ -78,6 +79,13 @@ class _TripState extends State<Trip> {
       };
 
       await _tripRepository.addAlertLog(alert);
+
+      // Gửi email cảnh báo cho guardian thông qua EmailJS
+      try {
+        await EmergencyUtils.sendTripAlert(context, triggerMethod: 'PanicButton');
+      } catch (e) {
+        debugPrint('sendTripAlert failed: $e');
+      }
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
