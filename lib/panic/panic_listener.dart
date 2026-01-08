@@ -6,7 +6,6 @@ import 'package:volume_controller/volume_controller.dart';
 
 import '../feat/setting/presentation/bloc/settings_bloc.dart';
 import '../feat/setting/presentation/bloc/settings_state.dart';
-import '../core/widgets/emergency_dialog.dart';
 import '../core/utils/emergency_utils.dart';
 
 class PanicListener extends StatefulWidget {
@@ -25,20 +24,13 @@ class _PanicListenerState extends State<PanicListener> {
 
   // ===== Power Button =====
   StreamSubscription? _powerSubscription;
-  static const _powerChannel = EventChannel('com.example.safetrek_project/power_button');
-
-  // ===== Overlay =====
-  bool _showOverlay = false;
+  static const _powerChannel =
+      EventChannel('com.example.safetrek_project/power_button');
 
   // ===== Settings =====
   bool _isEnabled = false;
   String _method = 'volume';
   int _requiredPresses = 3;
-
-  // ===== Emergency Data =====
-  String? _timeString;
-  String? _locationString;
-  String? _batteryString;
 
   // ===== Processing Flag =====
   bool _isProcessingEmergency = false;
@@ -62,8 +54,8 @@ class _PanicListenerState extends State<PanicListener> {
 
   // ================== HANDLE EVENT ==================
   void _registerPress() {
-    // Nếu đang hiện overlay hoặc đang xử lý emergency thì bỏ qua
-    if (_showOverlay || _isProcessingEmergency) return;
+    // Nếu đang xử lý emergency thì bỏ qua
+    if (_isProcessingEmergency) return;
 
     final now = DateTime.now();
 
@@ -116,17 +108,16 @@ class _PanicListenerState extends State<PanicListener> {
 
     try {
       // Sử dụng EmergencyUtils để xử lý logic
-      final data = await EmergencyUtils.triggerEmergency(context);
+      await EmergencyUtils.triggerEmergency(context);
 
       if (!mounted) return;
-
-      setState(() {
-        _showOverlay = true;
-        _currentPressCount = 0;
-        _timeString = data.time;
-        // _locationString = data.location;
-        _batteryString = data.battery;
-      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('ĐÃ GỬI CẢNH BÁO KHẨN CẤP!'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      _currentPressCount = 0;
     } catch (e) {
       debugPrint("Lỗi PanicListener: $e");
     } finally {
@@ -170,34 +161,7 @@ class _PanicListenerState extends State<PanicListener> {
           _applySettings(state);
         }
       },
-      child: Stack(
-        children: [
-          widget.child,
-
-          if (_showOverlay)
-            Positioned.fill(
-              child: Container(
-                color: Colors.black54,
-                child: Center(
-                  child: Material(
-                    color: Colors.transparent,
-                    child: EmergencyDialog(
-                      isOverlay: true,
-                      time: _timeString,
-                      location: _locationString,
-                      battery: _batteryString,
-                      onDismiss: () {
-                        setState(() {
-                          _showOverlay = false;
-                        });
-                      },
-                    ),
-                  ),
-                ),
-              ),
-            ),
-        ],
-      ),
+      child: widget.child,
     );
   }
 }
