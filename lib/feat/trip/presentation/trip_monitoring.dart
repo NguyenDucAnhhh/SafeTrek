@@ -2,14 +2,20 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:safetrek_project/core/widgets/app_bar.dart';
 import 'package:safetrek_project/core/widgets/emergency_button.dart';
 import 'package:safetrek_project/core/widgets/pin_input_dialog.dart';
 import 'package:safetrek_project/feat/home/presentation/main_screen.dart';
 import 'package:safetrek_project/feat/trip/data/services/location_service.dart';
+import 'package:safetrek_project/feat/trip/data/repository/trip_repository_impl.dart';
+import 'package:safetrek_project/feat/trip/data/data_source/trip_remote_data_source.dart';
+import 'package:safetrek_project/core/utils/emergency_utils.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:safetrek_project/feat/trip/presentation/trip.dart' as trip_page;
+
+import '../../guardians/domain/repository/guardian_repository.dart';
 
 class TripMonitoring extends StatefulWidget {
   final int durationInMinutes;
@@ -27,18 +33,40 @@ class TripMonitoring extends StatefulWidget {
 
 class _TripMonitoringState extends State<TripMonitoring> {
   late Timer _countdownTimer;
-  late Timer _locationTimer;
+  Timer? _locationTimer;
   late Duration _remainingTime;
-  StreamSubscription<DocumentSnapshot>? _tripStatusSubscription;
+  StreamSubscription<String?>? _tripStatusSubscription;
+  late final TripRepositoryImpl _tripRepository;
+  StreamSubscription<Map<String, dynamic>>? _positionSubscription;
+  int? _prefsStartTimeMs;
+  int? _prefsDurationSec;
+  final List<Map<String, dynamic>> _locationBuffer = [];
+  Timer? _flushTimer;
+  Timer? _sampleTimer;
+  bool _isFlushing = false;
+  bool _isSampling = false;
   String? _prefsTripId;
+  String? _lastStatusHandled;
+  bool _isNotifying = false;
+  DateTime? _lastRecordedAt;
+  double? _lastLat;
+  double? _lastLng;
 
   @override
   void initState() {
     super.initState();
     _remainingTime = Duration(minutes: widget.durationInMinutes);
     _initFromPrefsAndStart();
+    _tripRepository = TripRepositoryImpl(TripRemoteDataSource(FirebaseFirestore.instance));
     _startLocationTracking();
     _listenToTripStatus();
+    // Ensure we persist locations regularly during monitoring.
+    _startFlushTimer();
+    // Persist one immediate sample at start so `locationHistories` has an entry
+    // at t=0 and then every 30s afterwards.
+    _recordLocation();
+    // Start periodic sampling every 30s to guarantee writes during monitoring.
+    _sampleTimer ??= Timer.periodic(const Duration(seconds: 30), (_) => _recordLocation());
   }
 
   Future<void> _initFromPrefsAndStart() async {
@@ -49,10 +77,14 @@ class _TripMonitoringState extends State<TripMonitoring> {
       final tripIdPref = prefs.getString('current_trip_id');
       _prefsTripId = tripIdPref ?? widget.tripId;
 
-      if (startTime != null && duration != null) {
+      // Cache prefs to avoid reading them every tick
+      _prefsStartTimeMs = startTime;
+      _prefsDurationSec = duration;
+
+      if (_prefsStartTimeMs != null && _prefsDurationSec != null) {
         final now = DateTime.now().millisecondsSinceEpoch;
-        final elapsed = ((now - startTime) / 1000).round();
-        final remainingSec = duration - elapsed;
+        final elapsed = ((now - _prefsStartTimeMs!) / 1000).round();
+        final remainingSec = _prefsDurationSec! - elapsed;
         setState(() {
           _remainingTime = Duration(seconds: remainingSec > 0 ? remainingSec : 0);
         });
@@ -65,41 +97,47 @@ class _TripMonitoringState extends State<TripMonitoring> {
   }
 
   void _listenToTripStatus() {
-    _tripStatusSubscription = FirebaseFirestore.instance
-        .collection('trips')
-        .doc(widget.tripId)
-        .snapshots()
-        .listen((doc) {
-      final status = doc.data()?['status'] as String?;
-      if (status != null) {
-        if (status == 'Báo động') {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Chuyến đi đã báo động!'),
-                backgroundColor: Colors.red,
-              ),
-            );
-            Navigator.pushAndRemoveUntil(
-              context,
-              MaterialPageRoute(builder: (context) => const MainScreen()),
-              (route) => false,
-            );
-          }
-        } else if (status == 'Kết thúc an toàn') {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Đã xác nhận đến nơi an toàn!'),
-                backgroundColor: Colors.green,
-              ),
-            );
-            Navigator.pushAndRemoveUntil(
-              context,
-              MaterialPageRoute(builder: (context) => const MainScreen()),
-              (route) => false,
-            );
-          }
+    _tripStatusSubscription = _tripRepository.subscribeToTripStatus(widget.tripId).listen((status) {
+      if (status == null) return;
+      if (_lastStatusHandled != null && _lastStatusHandled == status) return;
+      _lastStatusHandled = status;
+
+      try {
+        _tripStatusSubscription?.cancel();
+      } catch (_) {}
+
+      if (_isNotifying) return;
+      _isNotifying = true;
+
+      if (status == 'Báo động') {
+        if (mounted) {
+          ScaffoldMessenger.of(context).clearSnackBars();
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Chuyến đi đã báo động!'),
+              backgroundColor: Colors.red,
+            ),
+          );
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (context) => const MainScreen()),
+            (route) => false,
+          );
+        }
+      } else if (status == 'Kết thúc an toàn') {
+        if (mounted) {
+          ScaffoldMessenger.of(context).clearSnackBars();
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Đã xác nhận đến nơi an toàn!'),
+              backgroundColor: Colors.green,
+            ),
+          );
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (context) => const MainScreen()),
+            (route) => false,
+          );
         }
       }
     });
@@ -108,9 +146,9 @@ class _TripMonitoringState extends State<TripMonitoring> {
   void _startCountdownTimer() {
     _countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) async {
       try {
-        final prefs = await SharedPreferences.getInstance();
-        final startTime = prefs.getInt('trip_start_time');
-        final duration = prefs.getInt('trip_duration');
+        // Use cached prefs values to avoid repeated IO
+        final startTime = _prefsStartTimeMs;
+        final duration = _prefsDurationSec;
         if (startTime == null || duration == null) {
           if (mounted) setState(() => _remainingTime = Duration.zero);
           timer.cancel();
@@ -134,74 +172,199 @@ class _TripMonitoringState extends State<TripMonitoring> {
   }
 
   void _startLocationTracking() {
-    _locationTimer = Timer.periodic(const Duration(seconds: 30), (timer) {
-      _recordLocation();
-    });
+    // Prefer position stream to avoid repeated heavy getCurrentPosition calls
+    try {
+      _positionSubscription = LocationService.getPositionStream().listen((location) async {
+        // Convert location map into a stored record
+        final record = {
+          'tripId': widget.tripId,
+          'latitude': location['latitude'],
+          'longitude': location['longitude'],
+          'timestamp': FieldValue.serverTimestamp(),
+          'batteryLevel': null,
+        };
+        await _addToBuffer(record);
+      });
+    } catch (e) {
+      debugPrint('Failed to start position stream, falling back to timer: $e');
+      _locationTimer = Timer.periodic(const Duration(seconds: 30), (timer) {
+        _recordLocation();
+      });
+    }
   }
 
   Future<void> _recordLocation() async {
+    if (_isSampling) return;
+    _isSampling = true;
     try {
       final location = await LocationService.getCurrentLocation();
       if (location == null) return;
 
-      await FirebaseFirestore.instance.collection('locationHistories').add({
+      final record = {
         'tripId': widget.tripId,
         'latitude': location['latitude'],
         'longitude': location['longitude'],
         'timestamp': FieldValue.serverTimestamp(),
         'batteryLevel': null,
-      });
+      };
+      await _addToBuffer(record);
     } catch (e) {
       debugPrint("Error recording location: $e");
+    } finally {
+      _isSampling = false;
     }
   }
 
-  Future<void> _triggerAlert(String triggerMethod) async {
+  Future<void> _addToBuffer(Map<String, dynamic> record) async {
+    // Deduplicate rapid consecutive records (e.g., initial immediate sample +
+    // a near-simultaneous position-stream event). If the last recorded time
+    // is recent and coordinates are almost identical, skip adding.
     try {
+      final lat = (record['latitude'] as num?)?.toDouble();
+      final lng = (record['longitude'] as num?)?.toDouble();
+      final now = DateTime.now();
+      if (_lastRecordedAt != null && lat != null && lng != null) {
+        final age = now.difference(_lastRecordedAt!);
+        final latDiff = (_lastLat == null) ? double.infinity : (lat - _lastLat!).abs();
+        final lngDiff = (_lastLng == null) ? double.infinity : (lng - _lastLng!).abs();
+        if (age.inSeconds < 5 && latDiff < 0.00005 && lngDiff < 0.00005) {
+          return; // skip near-duplicate
+        }
+      }
+      _locationBuffer.add(record);
+      _lastRecordedAt = DateTime.now();
+      _lastLat = (record['latitude'] as num?)?.toDouble();
+      _lastLng = (record['longitude'] as num?)?.toDouble();
+    } catch (e) {
+      _locationBuffer.add(record);
+    }
+    // Flush when buffer is large enough
+    if (_locationBuffer.length >= 3) {
+      await _flushLocationBuffer();
+      return;
+    }
+    // Ensure periodic flush runs
+    _startFlushTimer();
+  }
+
+  void _startFlushTimer() {
+    // Flush buffered locations every 30 seconds so `locationHistories`
+    // receives recent positions during monitoring.
+    _flushTimer ??= Timer.periodic(const Duration(seconds: 30), (_) async {
+      await _flushLocationBuffer();
+    });
+  }
+
+  Future<void> _flushLocationBuffer() async {
+    if (_locationBuffer.isEmpty) return;
+    if (_isFlushing) return;
+    _isFlushing = true;
+    try {
+      await _tripRepository.addLocationBatch(List<Map<String, dynamic>>.from(_locationBuffer));
+      _locationBuffer.clear();
+    } catch (e) {
+      debugPrint('Failed to flush location buffer: $e');
+    } finally {
+      _isFlushing = false;
+    }
+  }
+
+  Future<void> _triggerAlert(String triggerMethod, {bool silent = false, bool markAlarm = true}) async {
+    try {
+      // Capture GuardianRepository early to avoid using BuildContext inside
+      // async work (State may be unmounted by the time async ops complete).
+      final guardianRepo = context.read<GuardianRepository>();
       // Stop UI timers immediately to avoid further countdown actions
       try {
         _countdownTimer.cancel();
       } catch (_) {}
       try {
-        _locationTimer.cancel();
+        _locationTimer?.cancel();
       } catch (_) {}
+      try {
+        _positionSubscription?.cancel();
+      } catch (_) {}
+      try {
+        _flushTimer?.cancel();
+      } catch (_) {}
+      await _flushLocationBuffer();
 
       final user = FirebaseAuth.instance.currentUser;
       if (user == null) return;
 
       final location = await LocationService.getCurrentLocation();
-
-      await FirebaseFirestore.instance.collection('alertLogs').add({
-        'tripId': widget.tripId,
-        'userId': user.uid,
-        'triggerMethod': triggerMethod,
-        'timestamp': FieldValue.serverTimestamp(),
-        'location': location != null ? GeoPoint(location['latitude'], location['longitude']) : null,
-        'status': 'Sent',
-        'alertType': 'Push',
-      });
-
-      await FirebaseFirestore.instance.collection('trips').doc(widget.tripId).update({
-        'status': 'Báo động',
-        'actualEndTime': FieldValue.serverTimestamp(),
-        'lastLocation': location != null ? GeoPoint(location['latitude'], location['longitude']) : null,
-      });
-
-      // Try to send SMS via Cloud Function to guardians
-      try {
-        final func = FirebaseFunctions.instance.httpsCallable('sendAlertSms');
-        await func.call(<String, dynamic>{'tripId': widget.tripId, 'reason': triggerMethod});
-      } catch (e) {
-        debugPrint('sendAlertSms failed: $e');
+      // Persist final location into locationHistories so trip end has a record
+      if (location != null) {
+        final finalRecord = {
+          'tripId': widget.tripId,
+          'latitude': location['latitude'],
+          'longitude': location['longitude'],
+          'timestamp': FieldValue.serverTimestamp(),
+          'batteryLevel': null,
+        };
+        try {
+          await _tripRepository.addLocationBatch([finalRecord]);
+        } catch (e) {
+          debugPrint('Failed to persist final location: $e');
+        }
       }
+      if (markAlarm) {
+        final alert = {
+          'tripId': widget.tripId,
+          'userId': user.uid,
+          'triggerMethod': triggerMethod,
+          'timestamp': FieldValue.serverTimestamp(),
+          'location': location != null ? GeoPoint(location['latitude'], location['longitude']) : null,
+          'status': 'Sent',
+          'alertType': 'Push',
+        };
 
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('ĐÃ GỬI CẢNH BÁO KHẨN CẤP!'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        await _tripRepository.addAlertLog(alert);
+
+        await _tripRepository.updateTrip(widget.tripId, {
+          'status': 'Báo động',
+          'actualEndTime': FieldValue.serverTimestamp(),
+          'lastLocation': location != null ? GeoPoint(location['latitude'], location['longitude']) : null,
+        });
+
+        // Try to send SMS via Cloud Function to guardians
+        try {
+          final func = FirebaseFunctions.instance.httpsCallable('sendAlertSms');
+          await func.call(<String, dynamic>{'tripId': widget.tripId, 'reason': triggerMethod});
+        } catch (e) {
+          debugPrint('sendAlertSms failed: $e');
+        }
+
+        // Also send email alerts to guardians (uses EmergencyUtils -> EmailJS)
+        try {
+          await EmergencyUtils.sendTripAlertWithRepo(guardianRepo, triggerMethod: triggerMethod);
+        } catch (e) {
+          debugPrint('sendTripAlertWithRepo failed: $e');
+        }
+
+        if (mounted && !silent) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('ĐÃ GỬI CẢNH BÁO KHẨN CẤP!'),
+              backgroundColor: Colors.red,
+            ),
+          );
+          // After sending an alert from monitoring (timeout or panic),
+          // return the user to the MainScreen so they leave monitoring view.
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (context) => const MainScreen()),
+            (route) => false,
+          );
+        }
+      } else {
+        // markAlarm == false: only send silent email alert (no alertLog, no trip status change)
+        try {
+          await EmergencyUtils.sendTripAlertWithRepo(guardianRepo, triggerMethod: triggerMethod);
+        } catch (e) {
+          debugPrint('sendTripAlertWithRepo failed (silent): $e');
+        }
+        // Do not show any SnackBar or navigate when silent.
       }
     } catch (e) {
       debugPrint("Error triggering alert: $e");
@@ -211,13 +374,15 @@ class _TripMonitoringState extends State<TripMonitoring> {
   @override
   void dispose() {
     _countdownTimer.cancel();
-    _locationTimer.cancel();
+    _locationTimer?.cancel();
     _tripStatusSubscription?.cancel();
+    _positionSubscription?.cancel();
+    _flushTimer?.cancel();
+    _sampleTimer?.cancel();
     super.dispose();
   }
 
   Future<bool> _onWillPop() async {
-    // When user presses back, navigate to MainScreen but keep background service running
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(builder: (context) => const MainScreen()),
@@ -262,10 +427,25 @@ class _TripMonitoringState extends State<TripMonitoring> {
 
         // Hủy timer ngay
         _countdownTimer.cancel();
-        _locationTimer.cancel();
+        _locationTimer?.cancel();
 
         // CẬP NHẬT NGAY LẬP TỨC
         final lastLocation = await LocationService.getCurrentLocation();
+        // Persist final location to locationHistories
+        if (lastLocation != null) {
+          final finalRecord = {
+            'tripId': widget.tripId,
+            'latitude': lastLocation['latitude'],
+            'longitude': lastLocation['longitude'],
+            'timestamp': FieldValue.serverTimestamp(),
+            'batteryLevel': null,
+          };
+          try {
+            await _tripRepository.addLocationBatch([finalRecord]);
+          } catch (e) {
+            debugPrint('Failed to persist final location on check-in: $e');
+          }
+        }
         await FirebaseFirestore.instance.collection('trips').doc(widget.tripId).update({
           'status': tripStatus,
           'lastLocation': lastLocation != null ? GeoPoint(lastLocation['latitude'], lastLocation['longitude']) : null,
@@ -273,16 +453,24 @@ class _TripMonitoringState extends State<TripMonitoring> {
         });
 
       } else if (enteredPin == duressPIN) {
+        // Duress PIN: show UI as if safe, but keep Firestore trip status = 'Báo động'
+        // and send alerts silently (no in-app emergency SnackBar).
         tripStatus = 'Báo động';
-        messageText = 'Cảnh báo ép buộc đã được gửi đi một cách bí mật.';
-        messageColor = Colors.orange;
+        messageText = 'Đã xác nhận đến nơi an toàn!';
+        messageColor = Colors.green;
 
         // Hủy timer ngay
         _countdownTimer.cancel();
-        _locationTimer.cancel();
+        _locationTimer?.cancel();
 
-        // CẬP NHẬT NGAY LẬP TỨC (hàm _triggerAlert sẽ làm việc này)
-        await _triggerAlert('DuressPIN');
+        // Call _triggerAlert to create alertLog and set trip status = 'Báo động',
+        // but suppress UI by using silent=true. _triggerAlert will update
+        // lastLocation and actualEndTime as part of marking alarm.
+        try {
+          await _triggerAlert('DuressPIN', silent: true, markAlarm: true);
+        } catch (e) {
+          debugPrint('Failed to send duress alert (silent): $e');
+        }
 
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -311,8 +499,19 @@ class _TripMonitoringState extends State<TripMonitoring> {
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: _onWillPop,
+    return PopScope<void>(
+      canPop: false,
+      onPopInvokedWithResult: (bool didPop, _) {
+        if (!mounted) return;
+        // When back is invoked and the pop is blocked (didPop == false),
+        // navigate to MainScreen (previous behavior used pushReplacement).
+        if (!didPop) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const MainScreen()),
+          );
+        }
+      },
       child: Scaffold(
       appBar: const CustomAppBar(),
       body: Container(

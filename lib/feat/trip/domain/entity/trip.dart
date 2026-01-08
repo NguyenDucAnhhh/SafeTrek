@@ -1,14 +1,16 @@
 class Trip {
+  final String? id;
   final String name;
   final DateTime startedAt;
-  final DateTime expectedEndTime; // Thêm trường này
+  final DateTime expectedEndTime;
   final String? status;
-  final Map<String, dynamic>? lastLocation; // {latitude, longitude}
+  final Map<String, dynamic>? lastLocation;
 
   Trip({
+    this.id,
     required this.name,
     required this.startedAt,
-    required this.expectedEndTime, // Thêm vào constructor
+    required this.expectedEndTime,
     this.status,
     this.lastLocation,
   });

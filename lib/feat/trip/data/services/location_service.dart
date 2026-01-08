@@ -1,7 +1,7 @@
+import 'dart:async';
 import 'package:geolocator/geolocator.dart';
 
 class LocationService {
-  // Hàm này dùng cho UI, có thể yêu cầu quyền
   static Future<Map<String, dynamic>?> getCurrentLocation() async {
     try {
       LocationPermission permission = await Geolocator.checkPermission();
@@ -14,10 +14,10 @@ class LocationService {
         return null;
       }
 
+      final settings = LocationSettings(accuracy: LocationAccuracy.best);
       final position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.best,
-        timeLimit: const Duration(seconds: 10),
-      );
+        locationSettings: settings,
+      ).timeout(const Duration(seconds: 10));
 
       return {
         'latitude': position.latitude,
@@ -34,10 +34,11 @@ class LocationService {
   // Hàm này dùng cho background, không bao giờ yêu cầu quyền
   static Future<Map<String, dynamic>?> getCurrentLocationForBackground() async {
     try {
+      // For background tasks prefer lower accuracy to save battery
+      final settings = LocationSettings(accuracy: LocationAccuracy.low);
       final position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.best,
-        timeLimit: const Duration(seconds: 10),
-      );
+        locationSettings: settings,
+      ).timeout(const Duration(seconds: 10));
 
       return {
         'latitude': position.latitude,
@@ -47,5 +48,21 @@ class LocationService {
       print('Lỗi lấy vị trí (Background): $e');
       return null;
     }
+  }
+
+  // Provide a position stream with configurable accuracy/distanceFilter
+  static Stream<Map<String, dynamic>> getPositionStream({
+    LocationAccuracy accuracy = LocationAccuracy.low,
+    int distanceFilter = 10,
+  }) {
+    final settings = LocationSettings(accuracy: accuracy, distanceFilter: distanceFilter);
+    return Geolocator.getPositionStream(locationSettings: settings).map((pos) {
+      return {
+        'latitude': pos.latitude,
+        'longitude': pos.longitude,
+        'accuracy': pos.accuracy,
+        'timestamp': DateTime.now().toIso8601String(),
+      };
+    });
   }
 }

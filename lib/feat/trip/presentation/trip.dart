@@ -7,7 +7,9 @@ import 'package:safetrek_project/feat/trip/presentation/trip_history.dart';
 import 'package:safetrek_project/core/widgets/action_card.dart';
 import 'package:safetrek_project/core/widgets/emergency_button.dart';
 import 'package:safetrek_project/feat/trip/presentation/trip_monitoring.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:safetrek_project/feat/trip/data/data_source/trip_remote_data_source.dart';
+import 'package:safetrek_project/feat/trip/data/repository/trip_repository_impl.dart';
+import 'package:safetrek_project/core/utils/emergency_utils.dart';
 
 class Trip extends StatefulWidget {
   const Trip({super.key});
@@ -17,41 +19,31 @@ class Trip extends StatefulWidget {
 }
 
 class _TripState extends State<Trip> {
+  late final TripRepositoryImpl _tripRepository;
   @override
   void initState() {
     super.initState();
+    _tripRepository = TripRepositoryImpl(TripRemoteDataSource(FirebaseFirestore.instance));
     _checkAndResumeActiveTrip();
   }
 
   Future<void> _checkAndResumeActiveTrip() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
-    final querySnapshot = await FirebaseFirestore.instance
-      .collection('trips')
-      .where('userId', isEqualTo: user.uid)
-      .where('status', isEqualTo: 'Đang tiến hành')
-      .get();
-    if (querySnapshot.docs.isNotEmpty) {
-      querySnapshot.docs.sort((a, b) {
-        final aTs = (a.data()?['startedAt'] as Timestamp?)?.toDate() ?? DateTime.fromMillisecondsSinceEpoch(0);
-        final bTs = (b.data()?['startedAt'] as Timestamp?)?.toDate() ?? DateTime.fromMillisecondsSinceEpoch(0);
-        return bTs.compareTo(aTs);
-      });
-      final doc = querySnapshot.docs.first;
-      final data = doc.data();
-      final tripId = doc.id;
-      final expectedEndTime = (data['expectedEndTime'] as Timestamp?)?.toDate();
+    final activeTrips = await _tripRepository.getActiveTrips();
+    if (activeTrips.isNotEmpty) {
+      activeTrips.sort((a, b) => b.startedAt.compareTo(a.startedAt));
+      final active = activeTrips.first;
+      final expectedEndTime = active.expectedEndTime;
       final now = DateTime.now();
-      final remaining = expectedEndTime != null && expectedEndTime.isAfter(now)
-          ? expectedEndTime.difference(now)
-          : Duration.zero;
+      final remaining = expectedEndTime.isAfter(now) ? expectedEndTime.difference(now) : Duration.zero;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
             builder: (context) => TripMonitoring(
               durationInMinutes: remaining.inMinutes,
-              tripId: tripId,
+              tripId: active.id!,
             ),
           ),
         );
@@ -76,15 +68,24 @@ class _TripState extends State<Trip> {
       final location = await LocationService.getCurrentLocation();
 
       // Tạo bản ghi trong alertLogs với tripId là null
-      await FirebaseFirestore.instance.collection('alertLogs').add({
-        'tripId': null, // Thay đổi ở đây: tripId được đặt là null
+      final alert = {
+        'tripId': null,
         'userId': user.uid,
         'triggerMethod': 'PanicButton',
         'timestamp': FieldValue.serverTimestamp(),
         'location': location != null ? GeoPoint(location['latitude'], location['longitude']) : null,
         'status': 'Sent',
-        'alertType': 'Push', // Mặc định
-      });
+        'alertType': 'Push',
+      };
+
+      await _tripRepository.addAlertLog(alert);
+
+      // Gửi email cảnh báo cho guardian thông qua EmailJS
+      try {
+        await EmergencyUtils.sendTripAlert(context, triggerMethod: 'PanicButton');
+      } catch (e) {
+        debugPrint('sendTripAlert failed: $e');
+      }
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
