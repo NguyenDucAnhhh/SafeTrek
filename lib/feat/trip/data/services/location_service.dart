@@ -1,7 +1,7 @@
+import 'dart:async';
 import 'package:geolocator/geolocator.dart';
 
 class LocationService {
-  // Hàm này dùng cho UI, có thể yêu cầu quyền
   static Future<Map<String, dynamic>?> getCurrentLocation() async {
     try {
       LocationPermission permission = await Geolocator.checkPermission();
@@ -14,10 +14,10 @@ class LocationService {
         return null;
       }
 
+      final settings = LocationSettings(accuracy: LocationAccuracy.best);
       final position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.best,
-        timeLimit: const Duration(seconds: 10),
-      );
+        locationSettings: settings,
+      ).timeout(const Duration(seconds: 10));
 
       return {
         'latitude': position.latitude,
@@ -35,10 +35,10 @@ class LocationService {
   static Future<Map<String, dynamic>?> getCurrentLocationForBackground() async {
     try {
       // For background tasks prefer lower accuracy to save battery
+      final settings = LocationSettings(accuracy: LocationAccuracy.low);
       final position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.low,
-        timeLimit: const Duration(seconds: 10),
-      );
+        locationSettings: settings,
+      ).timeout(const Duration(seconds: 10));
 
       return {
         'latitude': position.latitude,
