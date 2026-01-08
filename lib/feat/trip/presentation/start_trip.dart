@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:safetrek_project/feat/trip/presentation/trip_monitoring.dart';
 import 'package:safetrek_project/core/widgets/secondary_header.dart';
 import 'package:safetrek_project/feat/trip/data/data_source/trip_remote_data_source.dart';

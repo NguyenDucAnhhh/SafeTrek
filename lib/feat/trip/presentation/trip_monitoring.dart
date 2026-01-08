@@ -38,7 +38,6 @@ class _TripMonitoringState extends State<TripMonitoring> {
   StreamSubscription<String?>? _tripStatusSubscription;
   late final TripRepositoryImpl _tripRepository;
   StreamSubscription<Map<String, dynamic>>? _positionSubscription;
-  bool _isRecordingLocation = false;
   int? _prefsStartTimeMs;
   int? _prefsDurationSec;
   final List<Map<String, dynamic>> _locationBuffer = [];
@@ -314,7 +313,6 @@ class _TripMonitoringState extends State<TripMonitoring> {
   }
 
   Future<bool> _onWillPop() async {
-    // When user presses back, navigate to MainScreen but keep background service running
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(builder: (context) => const MainScreen()),
@@ -408,8 +406,17 @@ class _TripMonitoringState extends State<TripMonitoring> {
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: _onWillPop,
+    return PopScope<void>(
+      canPop: false,
+      onPopInvokedWithResult: (bool didPop, _) {
+        if (!mounted) return;
+        if (!didPop) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const MainScreen()),
+          );
+        }
+      },
       child: Scaffold(
       appBar: const CustomAppBar(),
       body: Container(
