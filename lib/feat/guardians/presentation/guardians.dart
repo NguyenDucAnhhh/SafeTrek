@@ -159,7 +159,16 @@ class GuardiansView extends StatelessWidget {
                   keyboardType: TextInputType.phone,
                 ),
                 const SizedBox(height: 10),
-                const Text('Email (Tùy chọn)', style: TextStyle(fontWeight: FontWeight.bold)),
+                // SỬA GIAO DIỆN: Đánh dấu Email là trường bắt buộc
+                RichText(
+                  text: const TextSpan(
+                    style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+                    children: [
+                      TextSpan(text: 'Email '),
+                      TextSpan(text: '*', style: TextStyle(color: Colors.red)),
+                    ],
+                  ),
+                ),
                 TextField(
                   controller: emailController,
                   decoration: const InputDecoration(
@@ -193,14 +202,29 @@ class GuardiansView extends StatelessWidget {
                 ),
                 ElevatedButton(
                   onPressed: () {
-                    if (nameController.text.isNotEmpty && phoneController.text.isNotEmpty) {
+                    // SỬA LOGIC: Thêm kiểm tra email và thông báo lỗi
+                    if (nameController.text.isNotEmpty &&
+                        phoneController.text.isNotEmpty &&
+                        emailController.text.isNotEmpty) {
+                      // Kiểm tra định dạng email cơ bản
+                      if (!emailController.text.contains('@') || !emailController.text.contains('.')) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Vui lòng nhập một địa chỉ email hợp lệ.')),
+                        );
+                        return; // Dừng lại nếu email không hợp lệ
+                      }
+
                       final newGuardian = Guardian(
                         name: nameController.text,
                         phone: phoneController.text,
-                        email: emailController.text.isNotEmpty ? emailController.text : null,
+                        email: emailController.text,
                       );
                       context.read<GuardianBloc>().add(AddGuardianEvent(newGuardian));
                       Navigator.of(dialogContext).pop();
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Vui lòng điền đầy đủ các trường bắt buộc (*).')),
+                      );
                     }
                   },
                   style: ElevatedButton.styleFrom(
