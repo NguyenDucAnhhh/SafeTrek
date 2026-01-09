@@ -1,5 +1,3 @@
-import 'dart:convert';
-import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -8,29 +6,47 @@ import 'package:safetrek_project/core/widgets/app_bar.dart';
 import 'package:safetrek_project/feat/auth/presentation/bloc/auth_bloc.dart';
 import 'package:safetrek_project/feat/auth/presentation/bloc/auth_event.dart';
 import 'package:safetrek_project/feat/auth/presentation/bloc/auth_state.dart';
+import 'package:safetrek_project/feat/home/data/datasources/otp_remote_data_source.dart';
+import 'package:safetrek_project/feat/home/data/repositories/otp_repository_impl.dart';
+import 'package:safetrek_project/feat/home/domain/usecases/send_otp.dart';
+import 'package:safetrek_project/feat/home/presentation/register/bloc/register_bloc.dart';
+import 'package:safetrek_project/feat/home/presentation/register/bloc/register_event.dart';
+import 'package:safetrek_project/feat/home/presentation/register/bloc/register_state.dart';
 import '../main_screen.dart';
 import 'otp_screen.dart';
 
-class RegisterScreen extends StatefulWidget {
+class RegisterScreen extends StatelessWidget {
   const RegisterScreen({super.key});
 
   @override
-  State<RegisterScreen> createState() => _RegisterScreenState();
+  Widget build(BuildContext context) {
+    return BlocProvider(
+      create: (context) => RegisterBloc(
+        sendOtp: SendOtp(
+          OtpRepositoryImpl(
+            remoteDataSource: OtpRemoteDataSourceImpl(client: http.Client()),
+          ),
+        ),
+      ),
+      child: const RegisterView(),
+    );
+  }
 }
 
-class _RegisterScreenState extends State<RegisterScreen> {
+class RegisterView extends StatefulWidget {
+  const RegisterView({super.key});
+
+  @override
+  State<RegisterView> createState() => _RegisterViewState();
+}
+
+class _RegisterViewState extends State<RegisterView> {
   int _currentStep = 1;
 
-  // EmailJS Config
-  final String _serviceId = 'service_3wb3qkw';
-  final String _templateId = 'template_rc6gjcc';
-  final String _publicKey = '3BxtO5pqgnd6tCeFf';
-
   // State
-  bool _isSendingOtp = false;
   bool _isPasswordVisible = false;
   bool _isConfirmPasswordVisible = false;
-  
+
   // Controllers
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
@@ -40,68 +56,32 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final TextEditingController _pinController = TextEditingController();
   final TextEditingController _duressPinController = TextEditingController();
 
-  String _generateOtp() {
-    return (Random().nextInt(900000) + 100000).toString();
-  }
-
-  Future<String> _sendOtpToEmail() async {
-    final email = _emailController.text.trim();
-    final otp = _generateOtp();
-
-    final response = await http.post(
-      Uri.parse('https://api.emailjs.com/api/v1.0/email/send'),
-      headers: {'Content-Type': 'application/json'},
-      body: json.encode({
-        'service_id': _serviceId,
-        'template_id': _templateId,
-        'user_id': _publicKey,
-        'template_params': {
-          'to_email': email,
-          'otp_code': otp,
-        },
-      }),
-    );
-
-    if (response.statusCode == 200) {
-      return otp;
-    } else {
-      throw Exception('Gửi mail thất bại: ${response.body}');
-    }
-  }
-
-  void _handleNextStep1() async {
+  void _handleNextStep1() {
     final email = _emailController.text.trim();
     if (email.isEmpty || !email.contains('@')) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Vui lòng nhập email hợp lệ')));
       return;
     }
-
-    setState(() => _isSendingOtp = true);
-    try {
-      final otp = await _sendOtpToEmail();
-      if (!mounted) return;
-      
-      Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (context) => OtpScreen(
-            email: email,
-            generatedOtp: otp,
-            onVerified: () {
-              setState(() => _currentStep = 2);
-            },
-            onResend: _sendOtpToEmail,
-          ),
-        ),
-      );
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Lỗi: $e')));
-    } finally {
-      setState(() => _isSendingOtp = false);
-    }
+    context.read<RegisterBloc>().add(SendOtpRequested(email));
   }
 
   void _previousStep() {
     setState(() => _currentStep = 1);
+  }
+
+  void _onFinish() {
+    final name = _nameController.text.trim();
+    final email = _emailController.text.trim();
+    final phone = _phoneController.text.trim();
+    final password = _passwordController.text;
+    final pin = _pinController.text;
+    final duressPin = _duressPinController.text;
+
+    if (name.isEmpty || email.isEmpty || password.isEmpty || pin.isEmpty || duressPin.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Vui lòng điền đủ thông tin')));
+      return;
+    }
+    context.read<AuthBloc>().add(SignUpRequested(email: email, password: password, additionalData: {'name': name, 'phone': phone, 'safePIN': pin, 'duressPIN': duressPin}));
   }
 
   @override
@@ -120,30 +100,58 @@ class _RegisterScreenState extends State<RegisterScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: CustomAppBar(),
-      body: Container(
-        width: double.infinity,
-        height: double.infinity,
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Colors.white, Color(0xFFE0E7FF)],
+      body: MultiBlocListener(
+        listeners: [
+          BlocListener<RegisterBloc, RegisterState>(
+            listener: (context, state) {
+              if (state is OtpSentSuccess) {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => OtpScreen(
+                      email: _emailController.text.trim(),
+                      generatedOtp: state.otp,
+                      onVerified: () {
+                        setState(() => _currentStep = 2);
+                      },
+                      onResend: () async {
+                        final email = _emailController.text.trim();
+                        context.read<RegisterBloc>().add(SendOtpRequested(email));
+                        return await context.read<RegisterBloc>().stream.firstWhere((state) => state is OtpSentSuccess).then((state) => (state as OtpSentSuccess).otp);
+                      },
+                    ),
+                  ),
+                );
+              } else if (state is OtpSendFailure) {
+                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Lỗi: ${state.message}')));
+              }
+            },
           ),
-        ),
-        child: SafeArea(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 20.0),
-            child: BlocListener<AuthBloc, AuthState>(
-              listener: (context, state) {
-                if (state is AuthFailure) {
-                  ScaffoldMessenger.of(context)
-                    ..hideCurrentSnackBar()
-                    ..showSnackBar(SnackBar(content: Text(state.message)));
-                }
-                if (state is Authenticated) {
-                  Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => const MainScreen()));
-                }
-              },
+          BlocListener<AuthBloc, AuthState>(
+            listener: (context, state) {
+              if (state is AuthFailure) {
+                ScaffoldMessenger.of(context)
+                  ..hideCurrentSnackBar()
+                  ..showSnackBar(SnackBar(content: Text(state.message)));
+              }
+              if (state is Authenticated) {
+                Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => const MainScreen()));
+              }
+            },
+          ),
+        ],
+        child: Container(
+          width: double.infinity,
+          height: double.infinity,
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [Colors.white, Color(0xFFE0E7FF)],
+            ),
+          ),
+          child: SafeArea(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 20.0),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -226,17 +234,22 @@ class _RegisterScreenState extends State<RegisterScreen> {
           const SizedBox(height: 16),
           _TextFieldWithIcon(controller: _phoneController, icon: Icons.phone_outlined, label: 'Số điện thoại', hint: '0901234567', keyboardType: TextInputType.phone),
           const SizedBox(height: 24),
-          ElevatedButton(
-            onPressed: _isSendingOtp ? null : _handleNextStep1,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF1877F2),
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              elevation: 0,
-            ),
-            child: _isSendingOtp 
-              ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-              : const Text('Tiếp theo', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
+          BlocBuilder<RegisterBloc, RegisterState>(
+            builder: (context, state) {
+              final isSending = state is OtpSending;
+              return ElevatedButton(
+                onPressed: isSending ? null : _handleNextStep1,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF1877F2),
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  elevation: 0,
+                ),
+                child: isSending
+                    ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                    : const Text('Tiếp theo', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
+              );
+            },
           ),
         ],
       ),
@@ -355,22 +368,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
         ],
       ),
     );
-  }
-
-  void _onFinish() {
-    final name = _nameController.text.trim();
-    final email = _emailController.text.trim();
-    final phone = _phoneController.text.trim();
-    final password = _passwordController.text;
-    final confirm = _confirmPasswordController.text;
-    final pin = _pinController.text;
-    final duressPin = _duressPinController.text;
-
-    if (name.isEmpty || email.isEmpty || password.isEmpty || pin.isEmpty || duressPin.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Vui lòng điền đủ thông tin')));
-      return;
-    }
-    context.read<AuthBloc>().add(SignUpRequested(email: email, password: password, additionalData: {'name': name, 'phone': phone, 'safePIN': pin, 'duressPIN': duressPin}));
   }
 
   Widget _buildFooter() {
