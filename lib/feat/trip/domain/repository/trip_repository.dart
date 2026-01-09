@@ -1,6 +1,7 @@
 import 'package:safetrek_project/feat/trip/domain/entity/trip.dart';
 
 abstract class TripRepository {
+  String getUserId();
   Future<List<Trip>> getTrips();
   Future<String> addTrip(Trip trip);
   Future<List<Trip>> getActiveTrips();

@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:safetrek_project/core/widgets/secondary_header.dart';
-import 'package:safetrek_project/feat/trip/data/data_source/trip_remote_data_source.dart';
-import 'package:safetrek_project/feat/trip/data/repository/trip_repository_impl.dart';
+import 'package:safetrek_project/feat/trip/domain/repository/trip_repository.dart';
+import 'package:safetrek_project/feat/guardians/domain/repository/guardian_repository.dart';
 import 'package:safetrek_project/feat/trip/presentation/bloc/trip_bloc.dart';
 import 'package:safetrek_project/feat/trip/presentation/bloc/trip_event.dart';
 import 'package:safetrek_project/feat/trip/presentation/bloc/trip_state.dart';
@@ -15,9 +14,8 @@ class TripHistory extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (context) => TripBloc(
-        TripRepositoryImpl(
-          TripRemoteDataSource(FirebaseFirestore.instance),
-        ),
+        repository: context.read<TripRepository>(),
+        guardianRepository: context.read<GuardianRepository>(),
       )..add(LoadTripsEvent()),
       child: const _TripHistoryView(),
     );
@@ -43,7 +41,7 @@ class _TripHistoryViewState extends State<_TripHistoryView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: const SecondaryHeader(title: 'Lịch sử chuyến đi',),
+      appBar: const SecondaryHeader(title: 'Lịch sử chuyến đi'),
       body: Container(
         height: double.infinity,
         width: double.infinity,
@@ -54,81 +52,91 @@ class _TripHistoryViewState extends State<_TripHistoryView> {
             colors: [Color(0xFFF1F4FF), Color(0xFFE2E9FF)],
           ),
         ),
-          child: SingleChildScrollView(
-            child: Column(
-              children: [
-            const SizedBox(height: 20),
-            Card(
-              elevation: 2,
-              color: Colors.white,
-              margin: const EdgeInsets.symmetric(horizontal: 16),
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(15)),
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: BlocBuilder<TripBloc, TripState>(
-                  builder: (context, state) {
-                    int count = 0;
-                    if (state is TripLoaded) {
-                      count = state.trips.length;
-                    }
-                    return Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(10),
-                              decoration: BoxDecoration(
-                                color: Colors.blue.shade50,
-                                shape: BoxShape.circle,
+        child: SingleChildScrollView(
+          child: Column(
+            children: [
+              const SizedBox(height: 20),
+              Card(
+                elevation: 2,
+                color: Colors.white,
+                margin: const EdgeInsets.symmetric(horizontal: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(15),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: BlocBuilder<TripBloc, TripState>(
+                    builder: (context, state) {
+                      int count = 0;
+                      if (state is TripLoaded) {
+                        count = state.trips.length;
+                      }
+                      return Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(10),
+                                decoration: BoxDecoration(
+                                  color: Colors.blue.shade50,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(
+                                  Icons.history,
+                                  color: Colors.blue,
+                                ),
                               ),
-                              child: const Icon(Icons.history, color: Colors.blue),
+                              const SizedBox(width: 12),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    'Lịch sử Chuyến đi',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16,
+                                    ),
+                                  ),
+                                  Text(
+                                    '$count chuyến đi',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      color: Colors.grey.shade600,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+                          if (state is TripLoading)
+                            const Center(child: CircularProgressIndicator())
+                          else if (state is TripLoaded)
+                            state.trips.isEmpty
+                                ? _buildEmptyState()
+                                : _buildHistoryList(state.trips)
+                          else if (state is TripError)
+                            Center(
+                              child: Text(
+                                state.message,
+                                style: const TextStyle(color: Colors.red),
+                              ),
                             ),
-                            const SizedBox(width: 12),
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text(
-                                  'Lịch sử Chuyến đi',
-                                  style: TextStyle(
-                                      fontWeight: FontWeight.bold, fontSize: 16),
-                                ),
-                                Text(
-                                  '$count chuyến đi',
-                                  style: TextStyle(
-                                      fontSize: 14, color: Colors.grey.shade600),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-                        if (state is TripLoading)
-                          const Center(child: CircularProgressIndicator())
-                        else if (state is TripLoaded)
-                          state.trips.isEmpty
-                              ? _buildEmptyState()
-                              : _buildHistoryList(state.trips)
-                        else if (state is TripError)
-                          Center(
-                            child: Text(state.message,
-                                style: const TextStyle(color: Colors.red)),
-                          )
-                      ],
-                    );
-                  },
+                        ],
+                      );
+                    },
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
-      )
     );
   }
-  
+
   Widget _buildHistoryList(List trips) {
     return ListView.separated(
       shrinkWrap: true,
@@ -147,11 +155,7 @@ class _TripHistoryViewState extends State<_TripHistoryView> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            Icons.info_outline,
-            color: Colors.grey.shade400,
-            size: 60,
-          ),
+          Icon(Icons.info_outline, color: Colors.grey.shade400, size: 60),
           const SizedBox(height: 16),
           Text(
             'Chưa có chuyến đi nào',
@@ -161,12 +165,12 @@ class _TripHistoryViewState extends State<_TripHistoryView> {
       ),
     );
   }
-  
+
   Widget _buildTripHistoryItem(trip) {
     // Xác định màu sắc dựa trên trạng thái
     Color backgroundColor;
     Color textColor;
-    
+
     switch (trip.status) {
       case 'Kết thúc an toàn':
         backgroundColor = Colors.green.shade100;
@@ -190,11 +194,15 @@ class _TripHistoryViewState extends State<_TripHistoryView> {
       decoration: BoxDecoration(
         color: Colors.grey.shade100,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade200)
+        border: Border.all(color: Colors.grey.shade200),
       ),
       child: Row(
         children: [
-          Icon(Icons.location_on_outlined, color: Colors.grey.shade600, size: 28),
+          Icon(
+            Icons.location_on_outlined,
+            color: Colors.grey.shade600,
+            size: 28,
+          ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -202,7 +210,10 @@ class _TripHistoryViewState extends State<_TripHistoryView> {
               children: [
                 Text(
                   trip.name ?? 'Chuyến đi',
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 15,
+                  ),
                 ),
                 const SizedBox(height: 4),
                 Text(
@@ -236,7 +247,7 @@ class _TripHistoryViewState extends State<_TripHistoryView> {
   String _formatDateTime(DateTime dateTime) {
     final now = DateTime.now();
     final difference = now.difference(dateTime);
-    
+
     if (difference.inMinutes < 1) {
       return 'Vừa xong';
     } else if (difference.inHours < 1) {

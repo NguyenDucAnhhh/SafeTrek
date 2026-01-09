@@ -15,6 +15,9 @@ class TripRepositoryImpl implements TripRepository {
     return uid;
   }
 
+  @override
+  String getUserId() => _getUidOrThrow();
+
   // Note: trip statuses are stored in Vietnamese in Firestore.
 
   @override
@@ -22,15 +25,17 @@ class TripRepositoryImpl implements TripRepository {
     final uid = _getUidOrThrow();
     final models = await remoteDataSource.getTrips(uid);
     return models
-      .map((m) => Trip(
+        .map(
+          (m) => Trip(
             id: m.id,
             name: m.name,
             startedAt: m.startedAt,
             expectedEndTime: m.expectedEndTime,
             status: m.status,
             lastLocation: m.lastLocation,
-          ))
-      .toList();
+          ),
+        )
+        .toList();
   }
 
   @override
@@ -70,15 +75,17 @@ class TripRepositoryImpl implements TripRepository {
     final uid = _getUidOrThrow();
     final models = await remoteDataSource.getActiveTrips(uid);
     return models
-      .map((m) => Trip(
+        .map(
+          (m) => Trip(
             id: m.id,
             name: m.name,
             startedAt: m.startedAt,
             expectedEndTime: m.expectedEndTime,
             status: m.status,
             lastLocation: m.lastLocation,
-          ))
-      .toList();
+          ),
+        )
+        .toList();
   }
 
   @override

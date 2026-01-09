@@ -33,6 +33,11 @@ import 'feat/guardians/domain/repository/guardian_repository.dart';
 import 'feat/guardians/data/repository/guardian_repository_impl.dart';
 import 'feat/guardians/data/data_source/guardian_remote_data_source.dart';
 
+// ================= TRIP =================
+import 'feat/trip/domain/repository/trip_repository.dart';
+import 'feat/trip/data/repository/trip_repository_impl.dart';
+import 'feat/trip/data/data_source/trip_remote_data_source.dart';
+
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 Future<void> main() async {
@@ -42,9 +47,7 @@ Future<void> main() async {
   await initializeService();
 
   // 🔥 Firebase
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
   // 🔥 SharedPreferences
   final prefs = await SharedPreferences.getInstance();
@@ -65,10 +68,14 @@ Future<void> main() async {
   );
 
   // ================= GUARDIANS DATA =================
-  final guardianRemoteDataSource =
-  GuardianRemoteDataSource(FirebaseFirestore.instance);
-  final guardianRepository =
-  GuardianRepositoryImpl(guardianRemoteDataSource);
+  final guardianRemoteDataSource = GuardianRemoteDataSource(
+    FirebaseFirestore.instance,
+  );
+  final guardianRepository = GuardianRepositoryImpl(guardianRemoteDataSource);
+
+  // ================= TRIP DATA =================
+  final tripRemoteDataSource = TripRemoteDataSource(FirebaseFirestore.instance);
+  final tripRepository = TripRepositoryImpl(tripRemoteDataSource);
 
   runApp(
     MultiRepositoryProvider(
@@ -85,6 +92,7 @@ Future<void> main() async {
         RepositoryProvider<GuardianRepository>(
           create: (_) => guardianRepository,
         ),
+        RepositoryProvider<TripRepository>(create: (_) => tripRepository),
       ],
       child: const MyApp(),
     ),
@@ -111,23 +119,18 @@ class MyApp extends StatelessWidget {
 
         // ================= SETTINGS BLOC =================
         BlocProvider<SettingsBloc>(
-          create: (context) => SettingsBloc(
-            context.read<SettingsRepository>(),
-          )..add(LoadHiddenPanicSettingsEvent()),
+          create: (context) =>
+              SettingsBloc(context.read<SettingsRepository>())
+                ..add(LoadHiddenPanicSettingsEvent()),
         ),
       ],
       child: MaterialApp(
         navigatorKey: navigatorKey,
         debugShowCheckedModeBanner: false,
         title: 'SafeTrek',
-        theme: ThemeData(
-          useMaterial3: true,
-          colorSchemeSeed: Colors.indigo,
-        ),
+        theme: ThemeData(useMaterial3: true, colorSchemeSeed: Colors.indigo),
         builder: (context, child) {
-          return PanicListener(
-            child: child!,
-          );
+          return PanicListener(child: child!);
         },
         home: const SplashScreen(),
       ),

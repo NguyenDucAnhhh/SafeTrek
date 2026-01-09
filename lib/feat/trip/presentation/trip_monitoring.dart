@@ -9,11 +9,9 @@ import 'package:safetrek_project/core/widgets/emergency_button.dart';
 import 'package:safetrek_project/core/widgets/pin_input_dialog.dart';
 import 'package:safetrek_project/feat/home/presentation/main_screen.dart';
 import 'package:safetrek_project/feat/trip/data/services/location_service.dart';
-import 'package:safetrek_project/feat/trip/data/repository/trip_repository_impl.dart';
-import 'package:safetrek_project/feat/trip/data/data_source/trip_remote_data_source.dart';
+import 'package:safetrek_project/feat/trip/domain/repository/trip_repository.dart';
 import 'package:safetrek_project/core/utils/emergency_utils.dart';
 import 'package:cloud_functions/cloud_functions.dart';
-import 'package:safetrek_project/feat/trip/presentation/trip.dart' as trip_page;
 
 import '../../guardians/domain/repository/guardian_repository.dart';
 
@@ -36,7 +34,7 @@ class _TripMonitoringState extends State<TripMonitoring> {
   Timer? _locationTimer;
   late Duration _remainingTime;
   StreamSubscription<String?>? _tripStatusSubscription;
-  late final TripRepositoryImpl _tripRepository;
+  late final TripRepository _tripRepository;
   StreamSubscription<Map<String, dynamic>>? _positionSubscription;
   int? _prefsStartTimeMs;
   int? _prefsDurationSec;
@@ -57,7 +55,7 @@ class _TripMonitoringState extends State<TripMonitoring> {
     super.initState();
     _remainingTime = Duration(minutes: widget.durationInMinutes);
     _initFromPrefsAndStart();
-    _tripRepository = TripRepositoryImpl(TripRemoteDataSource(FirebaseFirestore.instance));
+    _tripRepository = context.read<TripRepository>();
     _startLocationTracking();
     _listenToTripStatus();
     // Ensure we persist locations regularly during monitoring.
@@ -66,7 +64,10 @@ class _TripMonitoringState extends State<TripMonitoring> {
     // at t=0 and then every 30s afterwards.
     _recordLocation();
     // Start periodic sampling every 30s to guarantee writes during monitoring.
-    _sampleTimer ??= Timer.periodic(const Duration(seconds: 30), (_) => _recordLocation());
+    _sampleTimer ??= Timer.periodic(
+      const Duration(seconds: 30),
+      (_) => _recordLocation(),
+    );
   }
 
   Future<void> _initFromPrefsAndStart() async {
@@ -86,7 +87,9 @@ class _TripMonitoringState extends State<TripMonitoring> {
         final elapsed = ((now - _prefsStartTimeMs!) / 1000).round();
         final remainingSec = _prefsDurationSec! - elapsed;
         setState(() {
-          _remainingTime = Duration(seconds: remainingSec > 0 ? remainingSec : 0);
+          _remainingTime = Duration(
+            seconds: remainingSec > 0 ? remainingSec : 0,
+          );
         });
       }
 
@@ -97,50 +100,53 @@ class _TripMonitoringState extends State<TripMonitoring> {
   }
 
   void _listenToTripStatus() {
-    _tripStatusSubscription = _tripRepository.subscribeToTripStatus(widget.tripId).listen((status) {
-      if (status == null) return;
-      if (_lastStatusHandled != null && _lastStatusHandled == status) return;
-      _lastStatusHandled = status;
+    _tripStatusSubscription = _tripRepository
+        .subscribeToTripStatus(widget.tripId)
+        .listen((status) {
+          if (status == null) return;
+          if (_lastStatusHandled != null && _lastStatusHandled == status)
+            return;
+          _lastStatusHandled = status;
 
-      try {
-        _tripStatusSubscription?.cancel();
-      } catch (_) {}
+          try {
+            _tripStatusSubscription?.cancel();
+          } catch (_) {}
 
-      if (_isNotifying) return;
-      _isNotifying = true;
+          if (_isNotifying) return;
+          _isNotifying = true;
 
-      if (status == 'Báo động') {
-        if (mounted) {
-          ScaffoldMessenger.of(context).clearSnackBars();
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Chuyến đi đã báo động!'),
-              backgroundColor: Colors.red,
-            ),
-          );
-          Navigator.pushAndRemoveUntil(
-            context,
-            MaterialPageRoute(builder: (context) => const MainScreen()),
-            (route) => false,
-          );
-        }
-      } else if (status == 'Kết thúc an toàn') {
-        if (mounted) {
-          ScaffoldMessenger.of(context).clearSnackBars();
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Đã xác nhận đến nơi an toàn!'),
-              backgroundColor: Colors.green,
-            ),
-          );
-          Navigator.pushAndRemoveUntil(
-            context,
-            MaterialPageRoute(builder: (context) => const MainScreen()),
-            (route) => false,
-          );
-        }
-      }
-    });
+          if (status == 'Báo động') {
+            if (mounted) {
+              ScaffoldMessenger.of(context).clearSnackBars();
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Chuyến đi đã báo động!'),
+                  backgroundColor: Colors.red,
+                ),
+              );
+              Navigator.pushAndRemoveUntil(
+                context,
+                MaterialPageRoute(builder: (context) => const MainScreen()),
+                (route) => false,
+              );
+            }
+          } else if (status == 'Kết thúc an toàn') {
+            if (mounted) {
+              ScaffoldMessenger.of(context).clearSnackBars();
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Đã xác nhận đến nơi an toàn!'),
+                  backgroundColor: Colors.green,
+                ),
+              );
+              Navigator.pushAndRemoveUntil(
+                context,
+                MaterialPageRoute(builder: (context) => const MainScreen()),
+                (route) => false,
+              );
+            }
+          }
+        });
   }
 
   void _startCountdownTimer() {
@@ -164,7 +170,8 @@ class _TripMonitoringState extends State<TripMonitoring> {
           await _triggerAlert('Timeout');
           return;
         }
-        if (mounted) setState(() => _remainingTime = Duration(seconds: remainingSec));
+        if (mounted)
+          setState(() => _remainingTime = Duration(seconds: remainingSec));
       } catch (e) {
         debugPrint('Countdown error: $e');
       }
@@ -174,7 +181,9 @@ class _TripMonitoringState extends State<TripMonitoring> {
   void _startLocationTracking() {
     // Prefer position stream to avoid repeated heavy getCurrentPosition calls
     try {
-      _positionSubscription = LocationService.getPositionStream().listen((location) async {
+      _positionSubscription = LocationService.getPositionStream().listen((
+        location,
+      ) async {
         // Convert location map into a stored record
         final record = {
           'tripId': widget.tripId,
@@ -225,8 +234,12 @@ class _TripMonitoringState extends State<TripMonitoring> {
       final now = DateTime.now();
       if (_lastRecordedAt != null && lat != null && lng != null) {
         final age = now.difference(_lastRecordedAt!);
-        final latDiff = (_lastLat == null) ? double.infinity : (lat - _lastLat!).abs();
-        final lngDiff = (_lastLng == null) ? double.infinity : (lng - _lastLng!).abs();
+        final latDiff = (_lastLat == null)
+            ? double.infinity
+            : (lat - _lastLat!).abs();
+        final lngDiff = (_lastLng == null)
+            ? double.infinity
+            : (lng - _lastLng!).abs();
         if (age.inSeconds < 5 && latDiff < 0.00005 && lngDiff < 0.00005) {
           return; // skip near-duplicate
         }
@@ -260,7 +273,9 @@ class _TripMonitoringState extends State<TripMonitoring> {
     if (_isFlushing) return;
     _isFlushing = true;
     try {
-      await _tripRepository.addLocationBatch(List<Map<String, dynamic>>.from(_locationBuffer));
+      await _tripRepository.addLocationBatch(
+        List<Map<String, dynamic>>.from(_locationBuffer),
+      );
       _locationBuffer.clear();
     } catch (e) {
       debugPrint('Failed to flush location buffer: $e');
@@ -269,7 +284,11 @@ class _TripMonitoringState extends State<TripMonitoring> {
     }
   }
 
-  Future<void> _triggerAlert(String triggerMethod, {bool silent = false, bool markAlarm = true}) async {
+  Future<void> _triggerAlert(
+    String triggerMethod, {
+    bool silent = false,
+    bool markAlarm = true,
+  }) async {
     try {
       // Capture GuardianRepository early to avoid using BuildContext inside
       // async work (State may be unmounted by the time async ops complete).
@@ -314,7 +333,9 @@ class _TripMonitoringState extends State<TripMonitoring> {
           'userId': user.uid,
           'triggerMethod': triggerMethod,
           'timestamp': FieldValue.serverTimestamp(),
-          'location': location != null ? GeoPoint(location['latitude'], location['longitude']) : null,
+          'location': location != null
+              ? GeoPoint(location['latitude'], location['longitude'])
+              : null,
           'status': 'Sent',
           'alertType': 'Push',
         };
@@ -324,20 +345,28 @@ class _TripMonitoringState extends State<TripMonitoring> {
         await _tripRepository.updateTrip(widget.tripId, {
           'status': 'Báo động',
           'actualEndTime': FieldValue.serverTimestamp(),
-          'lastLocation': location != null ? GeoPoint(location['latitude'], location['longitude']) : null,
+          'lastLocation': location != null
+              ? GeoPoint(location['latitude'], location['longitude'])
+              : null,
         });
 
         // Try to send SMS via Cloud Function to guardians
         try {
           final func = FirebaseFunctions.instance.httpsCallable('sendAlertSms');
-          await func.call(<String, dynamic>{'tripId': widget.tripId, 'reason': triggerMethod});
+          await func.call(<String, dynamic>{
+            'tripId': widget.tripId,
+            'reason': triggerMethod,
+          });
         } catch (e) {
           debugPrint('sendAlertSms failed: $e');
         }
 
         // Also send email alerts to guardians (uses EmergencyUtils -> EmailJS)
         try {
-          await EmergencyUtils.sendTripAlertWithRepo(guardianRepo, triggerMethod: triggerMethod);
+          await EmergencyUtils.sendTripAlertWithRepo(
+            guardianRepo,
+            triggerMethod: triggerMethod,
+          );
         } catch (e) {
           debugPrint('sendTripAlertWithRepo failed: $e');
         }
@@ -360,7 +389,10 @@ class _TripMonitoringState extends State<TripMonitoring> {
       } else {
         // markAlarm == false: only send silent email alert (no alertLog, no trip status change)
         try {
-          await EmergencyUtils.sendTripAlertWithRepo(guardianRepo, triggerMethod: triggerMethod);
+          await EmergencyUtils.sendTripAlertWithRepo(
+            guardianRepo,
+            triggerMethod: triggerMethod,
+          );
         } catch (e) {
           debugPrint('sendTripAlertWithRepo failed (silent): $e');
         }
@@ -400,7 +432,7 @@ class _TripMonitoringState extends State<TripMonitoring> {
   void _showPinDialog() async {
     final enteredPin = await showDialog<String>(
       context: context,
-      barrierDismissible: false, 
+      barrierDismissible: false,
       builder: (BuildContext context) {
         return const PinInputDialog();
       },
@@ -412,7 +444,10 @@ class _TripMonitoringState extends State<TripMonitoring> {
       final uid = FirebaseAuth.instance.currentUser?.uid;
       if (uid == null) return;
 
-      final userDoc = await FirebaseFirestore.instance.collection('users').doc(uid).get();
+      final userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(uid)
+          .get();
       final safePIN = userDoc.data()?['safePIN'] as String?;
       final duressPIN = userDoc.data()?['duressPIN'] as String?;
 
@@ -446,12 +481,13 @@ class _TripMonitoringState extends State<TripMonitoring> {
             debugPrint('Failed to persist final location on check-in: $e');
           }
         }
-        await FirebaseFirestore.instance.collection('trips').doc(widget.tripId).update({
+        await _tripRepository.updateTrip(widget.tripId, {
           'status': tripStatus,
-          'lastLocation': lastLocation != null ? GeoPoint(lastLocation['latitude'], lastLocation['longitude']) : null,
+          'lastLocation': lastLocation != null
+              ? GeoPoint(lastLocation['latitude'], lastLocation['longitude'])
+              : null,
           'actualEndTime': FieldValue.serverTimestamp(),
         });
-
       } else if (enteredPin == duressPIN) {
         // Duress PIN: show UI as if safe, but keep Firestore trip status = 'Báo động'
         // and send alerts silently (no in-app emergency SnackBar).
@@ -471,10 +507,12 @@ class _TripMonitoringState extends State<TripMonitoring> {
         } catch (e) {
           debugPrint('Failed to send duress alert (silent): $e');
         }
-
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Mã PIN không chính xác'), backgroundColor: Colors.red),
+          const SnackBar(
+            content: Text('Mã PIN không chính xác'),
+            backgroundColor: Colors.red,
+          ),
         );
         return;
       }
@@ -483,16 +521,18 @@ class _TripMonitoringState extends State<TripMonitoring> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(messageText), backgroundColor: messageColor),
       );
-      
+
       Navigator.pushAndRemoveUntil(
         context,
         MaterialPageRoute(builder: (context) => const MainScreen()),
         (route) => false,
       );
-
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Lỗi: ${e.toString()}'), backgroundColor: Colors.red),
+        SnackBar(
+          content: Text('Lỗi: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
       );
     }
   }
@@ -513,37 +553,35 @@ class _TripMonitoringState extends State<TripMonitoring> {
         }
       },
       child: Scaffold(
-      appBar: const CustomAppBar(),
-      body: Container(
-        height: double.infinity,
-        width: double.infinity,
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Color(0xFFF1F4FF), Color(0xFFE2E9FF)],
+        appBar: const CustomAppBar(),
+        body: Container(
+          height: double.infinity,
+          width: double.infinity,
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [Color(0xFFF1F4FF), Color(0xFFE2E9FF)],
+            ),
           ),
-        ),
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            children: [
-              _buildTimerCard(),
-              const SizedBox(height: 40),
-              EmergencyButton(
-                onPressed: () => _triggerAlert('PanicButton'),
-              ),
-              const SizedBox(height: 15),
-              const Text(
-                'Nhấn nút này để gửi cảnh báo khẩn cấp ngay lập tức đến tất cả người bảo vệ của bạn',
-                textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.grey, fontSize: 13),
-              ),
-            ],
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              children: [
+                _buildTimerCard(),
+                const SizedBox(height: 40),
+                EmergencyButton(onPressed: () => _triggerAlert('PanicButton')),
+                const SizedBox(height: 15),
+                const Text(
+                  'Nhấn nút này để gửi cảnh báo khẩn cấp ngay lập tức đến tất cả người bảo vệ của bạn',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Colors.grey, fontSize: 13),
+                ),
+              ],
+            ),
           ),
         ),
       ),
-      )
     );
   }
 
