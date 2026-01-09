@@ -24,38 +24,17 @@ class EmergencyData {
 }
 
 class EmergencyUtils {
-  /// Thực hiện quy trình khẩn cấp: Lấy dữ liệu và Gửi email
   static Future<EmergencyData> triggerEmergency(BuildContext context) async {
-    // 1. Lấy thông tin vị trí
-    // final locationData = await LocationService.getCurrentLocation();
-    // String locationString = "Không xác định";
-    // String mapsLink = "";
-    // if (locationData != null) {
-    //   locationString = "${locationData['latitude']}, ${locationData['longitude']}";
-    //   mapsLink = "https://www.google.com/maps/search/?api=1&query=${locationData['latitude']},${locationData['longitude']}";
-    // }
-
-    // 2. Lấy thông tin pin (hiện tại giả lập từ volume)
     double batteryLevel = await VolumeController().getVolume();
     String batteryString = "${(batteryLevel * 100).toInt()}% (giả lập từ volume)";
-
-    // 3. Lấy thời gian hiện tại
     final now = DateTime.now();
     final timeString = DateFormat('HH:mm:ss dd/MM/yyyy').format(now);
-
-    // 4. (Legacy) Không tự động gửi email ở đây nữa — dùng sendTripAlert khi cần.
-    // Giữ chức năng triggerEmergency để trả về dữ liệu hiển thị overlay.
-
     return EmergencyData(
       time: timeString,
-      // location: locationString,
       battery: batteryString,
-      // mapsLink: mapsLink,
     );
   }
 
-  /// Gửi email cảnh báo đến tất cả guardian của người dùng (dùng EmailJS)
-  /// Nội dung tuân theo yêu cầu của dự án.
   static Future<void> sendTripAlert(BuildContext context,
       {required String triggerMethod}) async {
     try {
@@ -106,16 +85,11 @@ class EmergencyUtils {
       final mapsLink = (location != null)
           ? 'https://www.google.com/maps/search/?api=1&query=${location['latitude']},${location['longitude']}'
           : 'Không xác định';
-
-      // Lấy mức pin (hiện tại giả lập)
       double batteryLevel = await VolumeController().getVolume();
       String batteryString = "${(batteryLevel * 100).toInt()}%";
-
       final currentUser = FirebaseAuth.instance.currentUser;
       final currentUserName =
           currentUser?.displayName ?? currentUser?.email ?? 'Người dùng SafeTrek';
-
-      // Build subject and message based on trigger reason
       String subject;
       String message;
       if (triggerMethod == 'PanicButton') {

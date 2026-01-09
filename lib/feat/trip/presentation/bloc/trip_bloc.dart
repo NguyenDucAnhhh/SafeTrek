@@ -177,9 +177,7 @@ class TripBloc extends Bloc<TripEvent, TripState> {
         emit(TripError('Vui lòng thêm người bảo vệ'));
         return;
       }
-
       emit(TripAlertSending());
-
       final uid = repository.getUserId();
       final location = await LocationService.getCurrentLocation();
       final alert = {
@@ -196,9 +194,7 @@ class TripBloc extends Bloc<TripEvent, TripState> {
         'status': 'Sent',
         'alertType': 'Push',
       };
-
       await repository.addAlertLog(alert);
-      // Send email alert to guardians without BuildContext.
       try {
         await EmergencyUtils.sendTripAlertWithRepo(
           guardianRepository,

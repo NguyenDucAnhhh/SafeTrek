@@ -6,20 +6,14 @@ import 'package:firebase_auth/firebase_auth.dart';
 
 class TripRepositoryImpl implements TripRepository {
   final TripRemoteDataSource remoteDataSource;
-
   TripRepositoryImpl(this.remoteDataSource);
-
   String _getUidOrThrow() {
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null) throw Exception('Người dùng chưa đăng nhập');
     return uid;
   }
-
   @override
   String getUserId() => _getUidOrThrow();
-
-  // Note: trip statuses are stored in Vietnamese in Firestore.
-
   @override
   Future<List<Trip>> getTrips() async {
     final uid = _getUidOrThrow();
@@ -37,11 +31,9 @@ class TripRepositoryImpl implements TripRepository {
         )
         .toList();
   }
-
   @override
   Future<String> addTrip(Trip trip) async {
     final uid = _getUidOrThrow();
-    // Khi thêm chuyến đi, lưu trạng thái bằng tiếng Việt
     String statusToSave;
     final status = trip.status ?? '';
     switch (status) {

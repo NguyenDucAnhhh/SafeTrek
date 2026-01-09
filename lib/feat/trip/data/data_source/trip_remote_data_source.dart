@@ -39,17 +39,17 @@ class TripRemoteDataSource {
     return snapshot.docs.map((d) => TripModel.fromFirestore(d)).toList();
   }
 
-  // Stream status of a trip (returns document snapshots)
+  // Stream status của 1 trip
   Stream<DocumentSnapshot> tripStatusStream(String tripId) {
     return firestore.collection('trips').doc(tripId).snapshots();
   }
 
-  // Add a single location record
+  // Thêm 1 bản ghi location vào collection
   Future<void> addLocation(Map<String, dynamic> location) async {
     await firestore.collection('locationHistories').add(location);
   }
 
-  // Batch add locations
+  // Batch thêm nhiều bản ghi locations
   Future<void> addLocationBatch(List<Map<String, dynamic>> locations) async {
     final batch = firestore.batch();
     final col = firestore.collection('locationHistories');
@@ -60,12 +60,12 @@ class TripRemoteDataSource {
     await batch.commit();
   }
 
-  // Add alert log
+  // Thêm 1 bản ghi alert log
   Future<void> addAlertLog(Map<String, dynamic> alert) async {
     await firestore.collection('alertLogs').add(alert);
   }
 
-  // Generic update
+  //  Cập nhật chung
   Future<void> updateTrip(String tripId, Map<String, dynamic> data) async {
     await firestore.collection('trips').doc(tripId).update(data);
   }

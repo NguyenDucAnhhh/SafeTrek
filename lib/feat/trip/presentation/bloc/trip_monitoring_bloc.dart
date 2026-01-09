@@ -53,6 +53,7 @@ class TripMonitoringBloc
   bool _isFlushing = false;
   bool _isSampling = false;
   String? _lastStatusHandled;
+  bool _suppressNextAlarmStatusEffect = false;
   DateTime? _lastRecordedAt;
   double? _lastLat;
   double? _lastLng;
@@ -162,6 +163,11 @@ class TripMonitoringBloc
     _lastStatusHandled = event.status;
 
     if (event.status == 'Báo động') {
+      if (_suppressNextAlarmStatusEffect) {
+        _suppressNextAlarmStatusEffect = false;
+        await _tripStatusSubscription?.cancel();
+        return;
+      }
       await _tripStatusSubscription?.cancel();
       emit(
         state.copyWith(
@@ -349,6 +355,11 @@ class TripMonitoringBloc
       }
 
       if (event.pin == duressPIN) {
+        // Prevent the Firestore status stream from showing an alarm UI
+        // while we intentionally mark the trip as "Báo động" server-side.
+        _suppressNextAlarmStatusEffect = true;
+        await _tripStatusSubscription?.cancel();
+        _lastStatusHandled = 'Báo động';
         await _triggerAlert('DuressPIN', emit, silent: true, markAlarm: true);
         emit(
           state.copyWith(
