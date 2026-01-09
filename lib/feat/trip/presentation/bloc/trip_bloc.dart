@@ -101,8 +101,15 @@ class TripBloc extends Bloc<TripEvent, TripState> {
     StartOrResumeTripRequested event,
     Emitter<TripState> emit,
   ) async {
-    emit(TripStarting());
     try {
+      final guardians = await guardianRepository.getGuardians();
+      if (guardians.isEmpty) {
+        emit(TripError('Vui lòng thêm người bảo vệ'));
+        return;
+      }
+
+      emit(TripStarting());
+
       // If there's a persisted trip id, and it's still active, resume it.
       final prefs = await SharedPreferences.getInstance();
       final existingTripId = prefs.getString('current_trip_id');
@@ -164,8 +171,15 @@ class TripBloc extends Bloc<TripEvent, TripState> {
     TriggerInstantAlertEvent event,
     Emitter<TripState> emit,
   ) async {
-    emit(TripAlertSending());
     try {
+      final guardians = await guardianRepository.getGuardians();
+      if (guardians.isEmpty) {
+        emit(TripError('Vui lòng thêm người bảo vệ'));
+        return;
+      }
+
+      emit(TripAlertSending());
+
       final uid = repository.getUserId();
       final location = await LocationService.getCurrentLocation();
       final alert = {

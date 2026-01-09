@@ -301,6 +301,23 @@ class TripMonitoringBloc
     TripMonitoringPanicPressed event,
     Emitter<TripMonitoringState> emit,
   ) async {
+    try {
+      final guardians = await guardianRepository.getGuardians();
+      if (guardians.isEmpty) {
+        emit(
+          state.copyWith(
+            effect: const TripMonitoringShowSnackBar(
+              message: 'Vui lòng thêm người bảo hộ',
+              backgroundColor: Colors.red,
+            ),
+          ),
+        );
+        return;
+      }
+    } catch (e) {
+      debugPrint('Failed to check guardians before panic: $e');
+    }
+
     await _triggerAlert(event.triggerMethod, emit);
   }
 
