@@ -108,8 +108,7 @@ class _PanicListenerState extends State<PanicListener> {
 
     try {
       // Sử dụng EmergencyUtils để xử lý logic
-      await EmergencyUtils.triggerEmergency(context);
-
+      await EmergencyUtils.sendTripAlert(context, triggerMethod: 'PanicButton');
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
