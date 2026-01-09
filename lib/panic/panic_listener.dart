@@ -6,6 +6,7 @@ import 'package:volume_controller/volume_controller.dart';
 
 import '../feat/setting/presentation/bloc/settings_bloc.dart';
 import '../feat/setting/presentation/bloc/settings_state.dart';
+import '../feat/guardians/domain/repository/guardian_repository.dart';
 import '../core/utils/emergency_utils.dart';
 
 class PanicListener extends StatefulWidget {
@@ -107,6 +108,20 @@ class _PanicListenerState extends State<PanicListener> {
     }
 
     try {
+      final guardianRepo = context.read<GuardianRepository>();
+      final guardians = await guardianRepo.getGuardians();
+      if (guardians.isEmpty) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Vui lòng thêm người bảo vệ'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        _currentPressCount = 0;
+        return;
+      }
+
       // Sử dụng EmergencyUtils để xử lý logic
       await EmergencyUtils.sendTripAlert(context, triggerMethod: 'PanicButton');
       if (!mounted) return;
